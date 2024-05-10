@@ -1,0 +1,9 @@
+﻿{
+  "HexoPath": "D:\\Project\\blog",
+  "OutputPath": "./source/_posts",
+  "SkipFileWhenException": true,
+  "AssetsStoreOption": null,
+  "GetMarkdownOption": null,
+  "MarkdownProvider": "MetaWeblog",
+  "AssetsStoreProvider": "Local"
+}
