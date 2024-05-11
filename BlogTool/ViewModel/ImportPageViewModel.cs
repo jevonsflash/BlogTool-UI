@@ -7,31 +7,24 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Windows;
-using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using BlogTool.Core.Helper;
-using BlogTool.Core;
 using BlogTool.Model.Dto;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using BlogTool.Helper;
 using BlogTool.Common;
-using System.Threading.Tasks;
-using MahApps.Metro.Controls.Dialogs;
-using MahApps.Metro.Controls;
-using Microsoft.EntityFrameworkCore;
 using BlogTool.Core.Markdown;
-using System.Diagnostics;
 using System.Net.Http;
 using BlogTool.Core.AssetsStores;
 using BlogTool.Core.Markdown.Implements;
 using BlogTool.Core.AssetsStores.Implements;
-using System.Globalization;
-using BlogTool.Core.Options;
 using System.Web;
 using BlogTool.Model;
+using MahApps.Metro.Controls.Dialogs;
+using MahApps.Metro.Controls;
+using System.Windows.Controls;
+using BlogTool.Control;
 
 namespace BlogTool.ViewModel
 {
@@ -121,13 +114,67 @@ namespace BlogTool.ViewModel
 
 
 
-        private void ImportFromMetaWeblogAction()
+        private async void ImportFromMetaWeblogAction()
         {
+            this.Entities.Clear();
+            var dialog = new CustomDialog()
+            {
+                Content = new UserControl()
+                {
+                    Content = new MetaWeblogInputDialog() { Name = "MainDialog" }
+
+                },
+
+                Title = "从MetaWeblog导入"
+            };
+
+            await DialogManager.ShowMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
+
+            dialog.FindChild<MetaWeblogInputDialog>("MainDialog").CancelButton.Click += async (o, e) =>
+            {
+                await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
+
+            };
+            dialog.FindChild<MetaWeblogInputDialog>("MainDialog").CommitButton.Click += (o, e) =>
+            {
+
+                var username = dialog.FindChild<MetaWeblogInputDialog>("MainDialog").TextBoxUsername.Text;
+                var password = dialog.FindChild<MetaWeblogInputDialog>("MainDialog").TextBoxPassword.Password;
+                var metaWeblogURL = dialog.FindChild<MetaWeblogInputDialog>("MainDialog").TextBoxMetaWeblogURL.Text;
+                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+                {
+                    return;
+                }
+                var task = InvokeHelper.InvokeOnUi<ProcessResultDto[]>(null, () =>
+                {
+
+                    var getMarkdownOption = new GetMarkdownOption()
+                    {
+                        ReadMorePosition = -1,
+                        MetaWeblogOption = new Core.Options.MetaWeblogOption
+                        {
+                            MetaWeblogURL = metaWeblogURL,
+                            Password = password,
+                            Username = username,
+                        },
+                    };
+                    return ProcessMarkdowns(getMarkdownOption, new MetaWeblogMarkdownProvider());
+
+                }, async (t) =>
+                {
+                    foreach (var item in t)
+                    {
+                        this.ProcessResultList.Add(item);
+                    }
+                    this.IsValidSuccess = null;
+                    await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
+
+                });
+            };
+
+
 
         }
-
-
-
 
 
         private void ImportFromLocalAction()
@@ -137,85 +184,30 @@ namespace BlogTool.ViewModel
 
             var task = InvokeHelper.InvokeOnUi<ProcessResultDto[]>(null, () =>
             {
-                var processResultList = new List<ProcessResultDto>();
-                try
+                var getMarkdownOption = new GetMarkdownOption()
                 {
-                    var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
-                    var client = new HttpClient();
-
-                    var creator = new MarkdownCreator();
-                    var handler = new AssetsStoreHandler();
-
-                    string path = Path.Combine(basePath, "Data");
-                    var openFileDialog = new OpenFileDialog();
-                    openFileDialog.InitialDirectory = path;
-                    openFileDialog.Filter = _excelFilesXlsxXls;
-                    openFileDialog.FileName = _fileName;
-                    openFileDialog.AddExtension = true;
-                    openFileDialog.RestoreDirectory = true;
-                    openFileDialog.Multiselect = true;
-                    var result = openFileDialog.ShowDialog();
-                    string[] filePaths;
-                    if (result == true)
-                    {
-                        filePaths = openFileDialog.FileNames;
-
-                    }
-                    else
-                    {
-                        filePaths = new string[0];
-                    }
-
-                    var getMarkdownOption = new GetMarkdownOption()
-                    {
-                        ReadMorePosition = -1,
-                    };
-                    creator.SetMarkdownProvider(getMarkdownOption, new LocalFilesMarkdownProvider());
-                    var assetsStoreOption = new AssetsStoreOption()
-                    {
-                        OutputPath = config.OutputPath,
-                        CompressionImage = false,
-                        AddWatermark = false,
-                    };
-                    handler.SetAssetsStoreProvider(assetsStoreOption, new HexoTagPluginAssetsStoreProvider());
-                    var mds = creator.Create(filePaths);
-
-                    string templatePath = Path.Combine(config.HexoPath, "scaffolds", "post.md");
-
-                    string fileFullPath;
-
-
-                    var fileDirectory = Directory.Exists(config.OutputPath) == false
-                        ? Directory.CreateDirectory(config.OutputPath).FullName
-                        : new DirectoryInfo(config.OutputPath).FullName;
-
-
-
-                    if (File.Exists(templatePath))
-                    {
-                        foreach (var md in mds)
-                        {
-                            fileFullPath = MarkdownHandler(processResultList, config, client, handler, getMarkdownOption, assetsStoreOption, templatePath, fileDirectory, md);
-                        }
-
-                    }
-                    else
-                    {
-
-                        processResultList.Add(new ProcessResultDto(DateTime.Now, $"找不到Hexo目录：{templatePath} "));
-
-                    }
+                    ReadMorePosition = -1,
+                };
+                string path = Path.Combine(basePath, "Data");
+                var openFileDialog = new OpenFileDialog();
+                openFileDialog.InitialDirectory = path;
+                openFileDialog.Filter = _excelFilesXlsxXls;
+                openFileDialog.FileName = _fileName;
+                openFileDialog.AddExtension = true;
+                openFileDialog.RestoreDirectory = true;
+                openFileDialog.Multiselect = true;
+                var result = openFileDialog.ShowDialog();
+                string[] filePaths;
+                if (result == true)
+                {
+                    filePaths = openFileDialog.FileNames;
 
                 }
-                catch (ArgumentException ex)
+                else
                 {
-                    processResultList.Add(new ProcessResultDto(DateTime.Now, string.Format("{0}参数错误:{0}{1}", Environment.NewLine, ex)));
+                    filePaths = new string[0];
                 }
-                catch (Exception ex)
-                {
-                    processResultList.Add(new ProcessResultDto(DateTime.Now, string.Format("{0}未知错误:{0}{1}", Environment.NewLine, ex)));
-                }
-                return processResultList.ToArray();
+                return ProcessMarkdowns(getMarkdownOption, new LocalFilesMarkdownProvider(), filePaths);
 
             }, (t) =>
             {
@@ -230,28 +222,150 @@ namespace BlogTool.ViewModel
         }
 
 
-        private void ImportFromClipboardAction()
+        private async void ImportFromClipboardAction()
         {
-
             this.Entities.Clear();
-            var task = InvokeHelper.InvokeOnUi<dynamic>(null, () =>
+            var dialog = new CustomDialog()
             {
-                return (new List<object>() as IEnumerable<object>).ToList();
-                Clipboard.GetText();
+                Content = new UserControl()
+                {
+                    Content = new ClipboardInputDialog() { Name = "MainDialog" }
 
+                },
 
-            }, (t) =>
+                Title = "从剪贴板导入"
+            };
+
+            await DialogManager.ShowMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
+
+            dialog.FindChild<ClipboardInputDialog>("MainDialog").CancelButton.Click += async (o, e) =>
             {
-                var data = t;
-                if (data != null)
+                await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
+
+            };
+            dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxContent.TextChanged += (o, e) =>
+            {
+                var title = dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxTitle.Text;
+                var content = dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxContent.Text;
+                if (string.IsNullOrEmpty(title))
+                {
+                    title = content.Trim().Substring(0, Math.Min(content.Trim().Length, 12));
+
+                }
+                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(content))
+                {
+                    return;
+                }
+                var task = InvokeHelper.InvokeOnUi<ProcessResultDto[]>(null, () =>
                 {
 
+                    var getMarkdownOption = new GetMarkdownOption()
+                    {
+                        ReadMorePosition = -1,
+                    };
+                    return ProcessMarkdowns(getMarkdownOption, new TextMarkdownProvider(), new { Title = title, Content = content });
 
-                    this.Entities = new ObservableCollection<object>(data.Employees);
+                }, async (t) =>
+                {
+                    foreach (var item in t)
+                    {
+                        this.ProcessResultList.Add(item);
+                    }
                     this.IsValidSuccess = null;
-                }
-            });
+                    await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
 
+                });
+            };
+
+
+
+        }
+
+
+        private ProcessResultDto[] ProcessMarkdowns(GetMarkdownOption getMarkdownOption, IMarkdownProvider markdownCreatorProvider, params object[] objects)
+        {
+            var processResultList = new List<ProcessResultDto>();
+            try
+            {
+                var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
+                getMarkdownOption.RecentTakeCount = config.RecentTakeCount;
+                var client = new HttpClient();
+
+                var creator = new MarkdownCreator();
+                var handler = new AssetsStoreHandler();
+
+                var assetsStoreOption = new AssetsStoreOption()
+                {
+                    OutputPath = config.OutputPath,
+                    CompressionImage = false,
+                    AddWatermark = false,
+                    SubPath = "."
+                };
+
+
+                if (config.AssetsStoreProvider == SettingInfo.EMBED)
+                {
+                    handler.SetAssetsStoreProvider(assetsStoreOption, new EmbedAssetsStoreProvider());
+
+                }
+                else if (config.AssetsStoreProvider == SettingInfo.LOCAL)
+                {
+
+                    handler.SetAssetsStoreProvider(assetsStoreOption, new LocalAssetsStoreProvider());
+                }
+
+                else if (config.AssetsStoreProvider == SettingInfo.HEXO_ASSET_FOLDER)
+                {
+
+                    handler.SetAssetsStoreProvider(assetsStoreOption, new HexoAssetFolderAssetsStoreProvider());
+                }
+
+                else if (config.AssetsStoreProvider == SettingInfo.HEXO_TAG_PLUGIN)
+                {
+
+                    handler.SetAssetsStoreProvider(assetsStoreOption, new HexoTagPluginAssetsStoreProvider());
+                }
+
+
+                creator.SetMarkdownProvider(getMarkdownOption, markdownCreatorProvider);
+                var mds = creator.Create(objects);
+
+                string templatePath = Path.Combine(config.HexoPath, "scaffolds", "post.md");
+
+                string fileFullPath;
+
+
+                var fileDirectory = Directory.Exists(config.OutputPath) == false
+                    ? Directory.CreateDirectory(config.OutputPath).FullName
+                    : new DirectoryInfo(config.OutputPath).FullName;
+
+
+
+                if (File.Exists(templatePath))
+                {
+                    foreach (var md in mds)
+                    {
+                        fileFullPath = MarkdownHandler(processResultList, config, client, handler, getMarkdownOption, assetsStoreOption, templatePath, fileDirectory, md);
+                    }
+
+                }
+                else
+                {
+
+                    processResultList.Add(new ProcessResultDto(DateTime.Now, $"找不到Hexo目录：{templatePath} "));
+
+                }
+
+            }
+            catch (ArgumentException ex)
+            {
+                processResultList.Add(new ProcessResultDto(DateTime.Now, string.Format("{0}参数错误:{0}{1}", Environment.NewLine, ex)));
+            }
+            catch (Exception ex)
+            {
+                processResultList.Add(new ProcessResultDto(DateTime.Now, string.Format("{0}未知错误:{0}{1}", Environment.NewLine, ex)));
+            }
+            return processResultList.ToArray();
         }
 
 
@@ -266,14 +380,14 @@ namespace BlogTool.ViewModel
                 OnPropertyChanged(nameof(ProcessResultList));
             }
         }
-        private ObservableCollection<object> _employees;
+        private ObservableCollection<object> _entities;
 
         public ObservableCollection<object> Entities
         {
-            get { return _employees; }
+            get { return _entities; }
             set
             {
-                _employees = value;
+                _entities = value;
                 OnPropertyChanged(nameof(Entities));
             }
         }

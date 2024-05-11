@@ -5,37 +5,29 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using AutoMapper;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Win32;
 using BlogTool.Common;
-using BlogTool.Control;
-using BlogTool.Core.Helper;
-using BlogTool.Core;
 using BlogTool.Model;
-using BlogTool.View;
 using BlogTool.Helper;
-using MahApps.Metro.Controls.Dialogs;
-using MahApps.Metro.Controls;
 using BlogTool.Core.Markdown;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization;
 
 namespace BlogTool.ViewModel
 {
     public class CategoryPageViewModel : ObservableObject
     {
         private ObservableCollection<object> _categoryTypeInfos;
-        
+
         public CategoryPageViewModel()
         {
-            this.SubmitCommand = new RelayCommand(() => { }, () => HasValue);
+            this.RefreshCommand = new RelayCommand(() =>
+            {
+                InitData();
+
+            });
             this.ClearCommand = new RelayCommand(ClearAction);
             this.RemoveCommand = new RelayCommand<IMarkdown>(RemoveAction);
             this.PropertyChanged += CategoryPageViewModel_PropertyChanged;
@@ -50,13 +42,30 @@ namespace BlogTool.ViewModel
             MessageBox.Show("清空成功");
         }
 
-        private void InitData()
+        public void InitData()
         {
             IList<IMarkdown> data = null;
 
             var task = InvokeHelper.InvokeOnUi<IList<IMarkdown>>(null, () =>
         {
+            var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
+
+            var markdownFiles = Directory.GetFiles(config.OutputPath, "*.md", SearchOption.TopDirectoryOnly);
+
             var result = new List<IMarkdown>();
+
+            foreach (var markdownFile in markdownFiles)
+            {
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(markdownFile);
+
+                result.Add(new HexoMarkdownFileInfo()
+                {
+                    FilePath = markdownFile,
+                    Title = fileNameWithoutExtension,
+                });
+            }
+
+
 
 
             return result;
@@ -82,11 +91,50 @@ namespace BlogTool.ViewModel
 
         }
 
+
+        private HexoPostMetadata ReadHexoPostMetadata(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("File not found: " + filePath);
+                return null;
+            }
+
+            string content = File.ReadAllText(filePath);
+
+            // 查找 YAML 头部信息的开始和结束位置  
+            int start = content.IndexOf("---");
+            int end = content.LastIndexOf("---") + 3; // 加上 "---" 的长度  
+
+            if (start == -1 || end == -1 || start >= end)
+            {
+                Console.WriteLine("No YAML front matter found in the file.");
+                return null;
+            }
+
+            // 提取 YAML 头部信息  
+            string yamlContent = content.Substring(start, end - start);
+
+            // 使用 YamlDotNet 解析 YAML 内容  
+            var deserializer = new DeserializerBuilder()
+                .WithNamingConvention(new CamelCaseNamingConvention()) // 根据需要选择命名约定  
+                .Build();
+
+            try
+            {
+                return deserializer.Deserialize<HexoPostMetadata>(yamlContent);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error deserializing YAML: " + ex.Message);
+                return null;
+            }
+        }
+
         private void CategoryPageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(this.Entities))
             {
-                SubmitCommand.NotifyCanExecuteChanged();
                 OnPropertyChanged(nameof(HasValue));
             }
 
@@ -95,8 +143,6 @@ namespace BlogTool.ViewModel
         private void CategoryInfos_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             OnPropertyChanged(nameof(HasValue));
-
-            SubmitCommand.NotifyCanExecuteChanged();
         }
 
         private void RemoveAction(IMarkdown obj)
@@ -126,27 +172,19 @@ namespace BlogTool.ViewModel
         }
 
 
-        private void ExportToExcelAction()
+    
+
+        private object _entity;
+
+        public object Entity
         {
-
-            var odInfos = Entities.ToList();
-            if (odInfos.Count > 0)
+            get { return _entity; }
+            set
             {
-                var task = InvokeHelper.InvokeOnUi<IEnumerable<object>>(null, () =>
-                {
-                    
-                    return this.Entities;
-                }, async (t) =>
-                {
-                    MessageBox.Show("已完成导出");
-
-                });
+                _entity = value;
+                OnPropertyChanged(nameof(Entity));
             }
         }
-
-      
-       
-
 
 
 
@@ -168,19 +206,16 @@ namespace BlogTool.ViewModel
         }
 
 
-        public List<MenuCommand> ExportOptions => new List<MenuCommand>() {
-            new MenuCommand("导出到Excel", ExportToExcelAction, () => true),
-        };
+   
 
 
-
-        public bool HasValue => this.Entities.Count>0;
+        public bool HasValue => this.Entities.Count > 0;
 
 
 
         public RelayCommand GetDataCommand { get; set; }
 
-        public RelayCommand SubmitCommand { get; set; }
+        public RelayCommand RefreshCommand { get; set; }
         public RelayCommand ClearCommand { get; set; }
         public RelayCommand<IMarkdown> RemoveCommand { get; set; }
 

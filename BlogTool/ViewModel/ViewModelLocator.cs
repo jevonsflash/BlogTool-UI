@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using BlogTool.Core;
 
 namespace BlogTool.ViewModel

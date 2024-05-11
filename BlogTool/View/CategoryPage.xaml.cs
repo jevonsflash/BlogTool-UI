@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using BlogTool.Helper;
 using BlogTool.Model;
 using BlogTool.ViewModel;
 
@@ -22,10 +23,17 @@ namespace BlogTool.View
     /// </summary>
     public partial class CategoryPage : Page
     {
+        public SettingInfo config { get; }
+
         public CategoryPage()
         {
             InitializeComponent();
+            config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
+
+            string path = config.OutputPath;
+            this.FileUrlTextBlock.Text = path;
         }
+
 
         private void ButtonRemove_OnClick(object sender, RoutedEventArgs e)
         {
@@ -54,7 +62,25 @@ namespace BlogTool.View
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            (App.Current.MainWindow as MainWindow).HamburgerMenuControl.SelectedIndex=1;
+            (App.Current.MainWindow as MainWindow).HamburgerMenuControl.SelectedIndex = 1;
+
+        }
+
+        private void Hyperlink_Click2(object sender, RoutedEventArgs e)
+        {
+
+            string path = config.OutputPath;
+            try
+            {
+                System.Diagnostics.Process.Start("explorer.exe", path);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("无法打开目录:" + ex);
+
+
+            }
 
         }
     }

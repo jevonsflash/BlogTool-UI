@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -15,11 +16,11 @@ using System.Windows.Shapes;
 namespace BlogTool.Control
 {
     /// <summary>
-    /// ProcedureControl.xaml 的交互逻辑
+    /// MetaWeblogInputDialog.xaml 的交互逻辑
     /// </summary>
-    public partial class ProcedureControl : UserControl
+    public partial class MetaWeblogInputDialog : UserControl
     {
-        public ProcedureControl()
+        public MetaWeblogInputDialog()
         {
             InitializeComponent();
         }

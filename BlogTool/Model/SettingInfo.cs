@@ -8,9 +8,12 @@ namespace BlogTool.Model
 {
     public class SettingInfo : ObservableObject
     {
+        public const string EMBED = "嵌入Base64";
+        public const string LOCAL = "本地目录";
+        public const string HEXO_ASSET_FOLDER = "Hexo资源文件夹";
+        public const string HEXO_TAG_PLUGIN = "Hexo标签插件";
 
-        public static List<string> AssetsStoreTypes => new() { "嵌入Base64", "本地目录", "Hexo资源文件夹", "Hexo标签插件" }
-       ;
+        public static List<string> AssetsStoreTypes => new() { EMBED, LOCAL, HEXO_ASSET_FOLDER, HEXO_TAG_PLUGIN };
 
         public SettingInfo()
         {

@@ -58,13 +58,12 @@
 	                  ItemsSource="{Binding Entities}">
             </DataGrid>
             <GridSplitter Grid.Row="1" Height="5" Margin="0,15,0,15"></GridSplitter>
-            <Grid Grid.Row="2"  Background="{Binding IsValidSuccess, Converter={StaticResource Bool2StringConverter}, ConverterParameter=Green|Red|Gray}">
+            <Grid Grid.Row="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"></RowDefinition>
                     <RowDefinition></RowDefinition>
                 </Grid.RowDefinitions>
                 
-                <TextBlock Text="{Binding IsValidSuccess, Converter={StaticResource Bool2StringConverter}, ConverterParameter=验算成功|验算失败|尚未验算}"></TextBlock>
 
                 <DataGrid Grid.Row="1"
 						VerticalScrollBarVisibility="Visible"
@@ -80,7 +79,7 @@
             </Grid>
         </Grid>
         <StackPanel Grid.Row="2" Orientation="Horizontal">
-            <Label Content="问题个数"></Label>
+            <Label Content="消息计数："></Label>
             <Label Content="{Binding ProcessResultList.Count}"></Label>
         </StackPanel>
 
