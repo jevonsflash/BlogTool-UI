@@ -88,23 +88,16 @@
                 <!--  Items  -->
                 <mah:HamburgerMenu.ItemsSource>
                     <mah:HamburgerMenuItemCollection>
-                        <mah:HamburgerMenuIconItem Label="文章" Tag="../View/CategoryPage.xaml">
+                        <mah:HamburgerMenuIconItem Label="文章"
+                                                   Tag="../View/CategoryPage.xaml">
                             <mah:HamburgerMenuIconItem.Icon>
-                                <iconPacks:PackIconMaterial  Margin="12" Kind="Orbit"
+                                <iconPacks:PackIconMaterial  Margin="12"
+                                                             Kind="Orbit"
                                                              Foreground="White"
-                                                             HorizontalAlignment="Center" 
+                                                             HorizontalAlignment="Center"
                                                              VerticalAlignment="Center"></iconPacks:PackIconMaterial>
                             </mah:HamburgerMenuIconItem.Icon>
                         </mah:HamburgerMenuIconItem>
-                        <mah:HamburgerMenuIconItem  Label="导入" Tag="../View/ImportPage.xaml">
-                            <mah:HamburgerMenuIconItem.Icon>
-                                <iconPacks:PackIconMaterial  Margin="12" Kind="Import"
-                                                             Foreground="White"
-                                                             HorizontalAlignment="Center" 
-                                                             VerticalAlignment="Center"></iconPacks:PackIconMaterial>
-                            </mah:HamburgerMenuIconItem.Icon>
-                        </mah:HamburgerMenuIconItem>
-
                         <mah:HamburgerMenuIconItem Label="设置" Tag="../View/SettingPage.xaml">
                             <mah:HamburgerMenuIconItem.Icon>
                                 <iconPacks:PackIconModern  Margin="12" Kind="Tools"

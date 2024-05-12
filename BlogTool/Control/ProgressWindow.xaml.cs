@@ -77,27 +77,30 @@ namespace BlogTool.Control
 
         private void HandleMessage(object recipient, string obj)
         {
-            this.MainProgress.IsIndeterminate = false;
-            this.CancelButton.Visibility = Visibility.Visible;
-            this.ProgressTextLayout.Visibility = Visibility.Visible;
-            this.TitleLabel.Text = "正在处理..";
-            var splitedstr = obj.Split('|');
-            CurrentVal = double.Parse(splitedstr[0]);
-            TotalVal = double.Parse(splitedstr[1]);
-            if (CurrentVal < TotalVal)
+            Application.Current.Dispatcher.InvokeAsync(() =>
             {
+                this.MainProgress.IsIndeterminate = false;
+                this.CancelButton.Visibility = Visibility.Visible;
+                this.ProgressTextLayout.Visibility = Visibility.Visible;
+                this.TitleLabel.Text = "正在处理..";
+                var splitedstr = obj.Split('|');
+                CurrentVal = double.Parse(splitedstr[0]);
+                TotalVal = double.Parse(splitedstr[1]);
+                if (CurrentVal < TotalVal)
+                {
 
 
-                this.MainProgress.Value = CurrentVal;
-                this.MainProgress.Maximum = TotalVal;
-                this.CurrentValueLabel.Content = CurrentVal;
-                this.TotalValueLabel.Content = TotalVal;
+                    this.MainProgress.Value = CurrentVal;
+                    this.MainProgress.Maximum = TotalVal;
+                    this.CurrentValueLabel.Content = CurrentVal;
+                    this.TotalValueLabel.Content = TotalVal;
 
-            }
-            else
-            {
-                this.Close();
-            }
+                }
+                else
+                {
+                    this.Close();
+                }
+            });
         }
 
 

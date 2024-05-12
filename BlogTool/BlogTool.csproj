@@ -26,15 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\*.*">
+    <None Update="Data\**\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Control\ClipboardInputDialog.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-
 </Project>

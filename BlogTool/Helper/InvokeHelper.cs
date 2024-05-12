@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using BlogTool.Control;
+using ControlzEx.Standard;
 
 namespace BlogTool.Helper
 {
@@ -30,15 +31,28 @@ namespace BlogTool.Helper
                     }
                     ProgressWindow.StaticShowDialog(title);
                 });
-                action?.Invoke();
+                try
+                {
+                    action.Invoke();
 
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        thenAction?.Invoke();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
                 {
 
-                    ProgressWindow.StaticUnShowDialog();
-                    thenAction?.Invoke();
-                });
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
 
+                        ProgressWindow.StaticUnShowDialog();
+                    });
+                }
             });
             return task;
         }
@@ -64,15 +78,32 @@ namespace BlogTool.Helper
                     }
                     ProgressWindow.StaticShowDialog(title);
                 });
-                var result= action.Invoke();
+                try
+                {
+                    var result = action.Invoke();
 
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        thenAction?.Invoke(result);
+                    });
+                    return result;
+                }
+                catch (Exception ex)
                 {
 
-                    ProgressWindow.StaticUnShowDialog();
-                    thenAction?.Invoke(result);
-                });
-                return result;
+                    MessageBox.Show(ex.Message);
+                    return default;
+                }
+                finally
+                {
+
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+
+                        ProgressWindow.StaticUnShowDialog();
+                    });
+                }
+                
             });
             return task;
         }

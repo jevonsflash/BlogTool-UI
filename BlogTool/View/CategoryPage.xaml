@@ -14,6 +14,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
         </Grid.RowDefinitions>
@@ -26,6 +27,22 @@
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Left">
+                <mah:DropDownButton 
+                                    Margin="5"
+                                    Width="120"
+                                    Content="导入.."
+                                    DisplayMemberPath="Title"
+                                    ItemsSource="{Binding ImportOptions}"
+                                    Orientation="Horizontal">
+                    <mah:DropDownButton.ItemContainerStyle>
+                        <Style BasedOn="{StaticResource MahApps.Styles.MenuItem}"
+                               TargetType="MenuItem">
+                            <Setter Property="Command"
+                                    Value="{Binding Command}" />
+                        </Style>
+                    </mah:DropDownButton.ItemContainerStyle>
+                </mah:DropDownButton>
+
                 <Button  Content="清空数据"
                          Command="{Binding ClearCommand}"
                          Width="120"></Button>
@@ -44,46 +61,86 @@
                 </Button>
             </StackPanel>
         </Grid>
-        <StackPanel Grid.Row="1"
-                    HorizontalAlignment="Center">
-            <Label Content="您还没有导入数据，导入后将呈现内容"></Label>
-            <Button Content="前往导入"
-                    Width="100"
-                    Margin="0, 30"
-                    HorizontalAlignment="Center"
-                    Click="Button_Click"></Button>
-        </StackPanel>
-        <DataGrid Grid.Row="1"
-                  Visibility="{Binding HasValue, Converter={StaticResource Bool2VisibilityConverter}}"
-                  IsReadOnly="True"
-                  SelectedItem="{Binding Entity}"
-                  AutoGenerateColumns="True"
-                  AutoGeneratingColumn="DataGrid_OnAutoGeneratingColumn"
-                  ItemsSource="{Binding  Entities}">
+        <StackPanel Grid.Row="1">
 
-            <DataGrid.Columns>
-
-                <DataGridTemplateColumn Header="操作">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition></ColumnDefinition>
-                                </Grid.ColumnDefinitions>
-                                <Button Grid.Column="1"
-                                        Width="120"
-                                        Content="删除"
-                                        Click="ButtonRemove_OnClick"></Button>
-                            </Grid>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-        <StackPanel Grid.Row="2">
             <TextBlock TextWrapping="Wrap">文章路径:  <Hyperlink Click="Hyperlink_Click2"><TextBlock x:Name="FileUrlTextBlock"
-                                                                                                   Text=".."></TextBlock></Hyperlink></TextBlock>
+                                                                                                 Text=".."></TextBlock></Hyperlink></TextBlock>
 
+        </StackPanel>
+
+
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"></RowDefinition>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="1*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0"
+                        HorizontalAlignment="Center">
+                <Label Content="您还没有导入数据，导入后将呈现内容"></Label>
+                <Button Content="前往导入"
+                        Width="100"
+                        Margin="0, 30"
+                        HorizontalAlignment="Center"
+                        Click="Button_Click"></Button>
+            </StackPanel>
+            <DataGrid Grid.Row="0"
+                      Visibility="{Binding HasValue, Converter={StaticResource Bool2VisibilityConverter}}"
+                      IsReadOnly="True"
+                      SelectedItem="{Binding Entity}"
+                      AutoGenerateColumns="True"
+                      AutoGeneratingColumn="DataGrid_OnAutoGeneratingColumn"
+                      ItemsSource="{Binding  Entities}">
+
+                <DataGrid.Columns>
+
+                    <DataGridTemplateColumn Header="操作">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="1"
+                                            Width="120"
+                                            Content="删除"
+                                            Click="ButtonRemove_OnClick"></Button>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+            <GridSplitter Grid.Row="1"
+                          Height="5"
+                          Margin="0,15,0,15"></GridSplitter>
+            <Grid Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+
+
+                <DataGrid Grid.Row="1"
+                          VerticalScrollBarVisibility="Visible"
+                          AutoGenerateColumns="False"
+                          AutoGeneratingColumn="DataGrid_OnAutoGeneratingColumn"
+                          ItemsSource="{Binding ProcessResultList}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID"
+                                            Binding="{Binding Id}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="时间"
+                                            Binding="{Binding CreationTime}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="内容"
+                                            Binding="{Binding Content}"></DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Grid>
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal">
+            <Label Content="消息计数："></Label>
+            <Label Content="{Binding ProcessResultList.Count}"></Label>
         </StackPanel>
     </Grid>
 </Page>
