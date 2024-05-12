@@ -54,9 +54,32 @@ namespace BlogTool.ViewModel
 
         private void ClearAction()
         {
-            this.Entities.Clear();
-            OnPropertyChanged(nameof(HasValue));
-            MessageBox.Show("清空成功");
+            var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
+
+            try
+            {
+                foreach (var file in Directory.GetFiles(config.OutputPath))
+                {
+                    File.Delete(file);
+                    Console.WriteLine("文件已删除: " + file);
+                }
+
+                foreach (var dir in Directory.GetDirectories(config.OutputPath))
+                {
+                    Directory.Delete(dir, true); 
+                    Console.WriteLine("子目录已删除: " + dir);
+                }
+
+                Console.WriteLine("目录中的所有内容已被删除。");
+                this.Entities.Clear();
+                OnPropertyChanged(nameof(HasValue));
+                MessageBox.Show("清空成功");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("删除目录内容时发生错误: " + ex.Message);
+            }
+
         }
 
         public void InitData()
@@ -335,16 +358,40 @@ namespace BlogTool.ViewModel
 
         internal void RemoveCategory(IMarkdown CategoryInfo)
         {
-            if (Entities.Any(c => (c as IMarkdown).Title == CategoryInfo.Title))
+            string markdownFilePath = (CategoryInfo as HexoMarkdownFileInfo).FilePath;
+            string directoryName = Path.GetDirectoryName(markdownFilePath);  
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(markdownFilePath);
+            string directoryToDelete = Path.Combine(directoryName, fileNameWithoutExtension); 
+            try
             {
-                var current = Entities.FirstOrDefault(c => (c as IMarkdown).Title == CategoryInfo.Title);
-                Entities.RemoveAt(Entities.IndexOf(current));
+                if (Directory.Exists(directoryToDelete))
+                {
+                    Directory.Delete(directoryToDelete, true);
+                    Console.WriteLine("目录已成功删除: " + directoryToDelete);
+                }
+                if (File.Exists(markdownFilePath))
+                {
+                    File.Delete(markdownFilePath);
+                    Console.WriteLine("文件已成功删除: " + markdownFilePath);
+                }
 
+                var current = Entities.FirstOrDefault(c => (c as IMarkdown).Title == CategoryInfo.Title);
+                if (Entities.Any(c => (c as IMarkdown).Title == CategoryInfo.Title))
+                {
+
+                    Entities.RemoveAt(Entities.IndexOf(current));
+
+                }
+                else
+                {
+                    MessageBox.Show("条目不存在");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("条目不存在");
+                Console.WriteLine("删除文件时发生错误: " + ex.Message);
             }
+            
         }
 
 
@@ -562,31 +609,26 @@ namespace BlogTool.ViewModel
                     OutputPath = config.OutputPath,
                     CompressionImage = false,
                     AddWatermark = false,
-                    SubPath = "."
                 };
-
+                IAssetsStoreProvider assetsStoreProvider = null;
 
                 if (config.AssetsStoreProvider == SettingInfo.EMBED)
                 {
-                    handler.SetAssetsStoreProvider(assetsStoreOption, new EmbedAssetsStoreProvider());
-
+                    assetsStoreProvider=new EmbedAssetsStoreProvider();
                 }
                 else if (config.AssetsStoreProvider == SettingInfo.LOCAL)
                 {
-
-                    handler.SetAssetsStoreProvider(assetsStoreOption, new LocalAssetsStoreProvider());
+                    assetsStoreProvider=new LocalAssetsStoreProvider();
                 }
 
                 else if (config.AssetsStoreProvider == SettingInfo.HEXO_ASSET_FOLDER)
                 {
-
-                    handler.SetAssetsStoreProvider(assetsStoreOption, new HexoAssetFolderAssetsStoreProvider());
+                    assetsStoreProvider=new HexoAssetFolderAssetsStoreProvider();
                 }
 
                 else if (config.AssetsStoreProvider == SettingInfo.HEXO_TAG_PLUGIN)
                 {
-
-                    handler.SetAssetsStoreProvider(assetsStoreOption, new HexoTagPluginAssetsStoreProvider());
+                    assetsStoreProvider=new HexoTagPluginAssetsStoreProvider();
                 }
 
 
@@ -611,6 +653,8 @@ namespace BlogTool.ViewModel
                     {
                         var progress = $"{index}|{mds.Count}";
                         WeakReferenceMessenger.Default.Send<string, string>(progress, MessengerToken.UPDATEPROGRESS);
+                        assetsStoreOption.SubPath=md.Title;
+                        handler.SetAssetsStoreProvider(assetsStoreOption, assetsStoreProvider);
 
                         fileFullPath = MarkdownHandler(processResultList, config, client, handler, getMarkdownOption, assetsStoreOption, templatePath, fileDirectory, md);
                         index++;

@@ -78,11 +78,7 @@
             <StackPanel Grid.Row="0"
                         HorizontalAlignment="Center">
                 <Label Content="您还没有导入数据，导入后将呈现内容"></Label>
-                <Button Content="前往导入"
-                        Width="100"
-                        Margin="0, 30"
-                        HorizontalAlignment="Center"
-                        Click="Button_Click"></Button>
+
             </StackPanel>
             <DataGrid Grid.Row="0"
                       Visibility="{Binding HasValue, Converter={StaticResource Bool2VisibilityConverter}}"

@@ -1,17 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using BlogTool.Helper;
 using BlogTool.Model;
 using BlogTool.ViewModel;
@@ -39,6 +29,7 @@ namespace BlogTool.View
         {
             var item = sender as FrameworkElement;
             var vm = this.DataContext as CategoryPageViewModel;
+            vm.RemoveCommand.Execute(item.DataContext);
         }
 
         private void Page_Unloaded(object sender, RoutedEventArgs e)
@@ -55,16 +46,6 @@ namespace BlogTool.View
             e.Column.Header = ((PropertyDescriptor)e.PropertyDescriptor).DisplayName;
         }
 
-        private void DataGrid_SelectionChanged()
-        {
-
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            (App.Current.MainWindow as MainWindow).HamburgerMenuControl.SelectedIndex = 1;
-
-        }
 
         private void Hyperlink_Click2(object sender, RoutedEventArgs e)
         {

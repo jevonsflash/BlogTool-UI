@@ -18,7 +18,6 @@ using Microsoft.Win32;
 using BlogTool.Common;
 using BlogTool.Control;
 using BlogTool.Core.Helper;
-using BlogTool.Core.Helper;
 using BlogTool.Model;
 using BlogTool.View;
 using BlogTool.Helper;
