@@ -27,8 +27,7 @@
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Left">
-                <mah:DropDownButton 
-                                    Margin="5"
+                <mah:DropDownButton Margin="5"
                                     Width="120"
                                     Content="导入.."
                                     DisplayMemberPath="Title"
@@ -96,11 +95,14 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="1"
-                                            Width="120"
-                                            Content="删除"
-                                            Click="ButtonRemove_OnClick"></Button>
+                                    <TextBlock TextWrapping="Wrap"
+                                               Grid.Column="0"><Hyperlink Click="ButtonOpen_OnClick">打开</Hyperlink></TextBlock>
+
+                                    <TextBlock TextWrapping="Wrap" Margin="10,0,0,0"
+                                               Grid.Column="1"><Hyperlink Click="ButtonRemove_OnClick">删除</Hyperlink></TextBlock>
                                 </Grid>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
