@@ -17,6 +17,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="BlogTool.Core" Version="0.3.0" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 		<PackageReference Include="gong-wpf-dragdrop" Version="3.2.1" />
 		<PackageReference Include="MahApps.Metro" Version="2.4.10" />
@@ -26,10 +27,6 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="YamlDotNet" Version="15.1.2" />
 		<PackageReference Include="NReco.PhantomJS" Version="1.1.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\..\BlogTool\BlogTool.Core\BlogTool.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
