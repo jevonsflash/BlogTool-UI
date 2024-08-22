@@ -18,7 +18,7 @@ namespace BlogTool.Core.Markdown.Implements
 
                 },
                 Title = p.Title,
-                Description = p.Content,
+                Content = p.Content,
                 DateCreated = DateTime.Now,
             });
 

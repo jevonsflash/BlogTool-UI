@@ -30,14 +30,14 @@ using System.Windows.Controls;
 
 namespace BlogTool.ViewModel
 {
-    public class HomePageViewModel : ObservableObject
+    public class CategoryPageViewModel : ObservableObject
     {
         private static string _fileName = null;
         private static string _excelFilesXlsxXls = "Markdown文件|*.md|所有文件|*.*";
         private static readonly string basePath = CommonHelper.AppBasePath;
         private ObservableCollection<object> _categoryTypeInfos;
 
-        public HomePageViewModel()
+        public CategoryPageViewModel()
         {
             this.ProcessResultList = new ObservableCollection<ProcessResultDto>();
             this.RefreshCommand = new RelayCommand(() =>
@@ -45,42 +45,14 @@ namespace BlogTool.ViewModel
                 InitData();
 
             });
-            this.ClearCommand = new RelayCommand(ClearAction);
+            this.ImportFromClipboardCommand= new RelayCommand(ImportFromClipboardAction, () => true);
+            this.ImportFromLocalCommand= new RelayCommand(ImportFromLocalAction, () => true);
+
             this.RemoveCommand = new RelayCommand<IMarkdown>(RemoveAction);
-            this.PropertyChanged += HomePageViewModel_PropertyChanged;
+            this.PropertyChanged += CategoryPageViewModel_PropertyChanged;
             InitData();
         }
 
-
-        private void ClearAction()
-        {
-            var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
-
-            try
-            {
-                foreach (var file in Directory.GetFiles(config.OutputPath))
-                {
-                    File.Delete(file);
-                    Console.WriteLine("文件已删除: " + file);
-                }
-
-                foreach (var dir in Directory.GetDirectories(config.OutputPath))
-                {
-                    Directory.Delete(dir, true); 
-                    Console.WriteLine("子目录已删除: " + dir);
-                }
-
-                Console.WriteLine("目录中的所有内容已被删除。");
-                this.Entities.Clear();
-                OnPropertyChanged(nameof(HasValue));
-                MessageBox.Show("清空成功");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("删除目录内容时发生错误: " + ex.Message);
-            }
-
-        }
 
         public void InitData()
         {
@@ -171,7 +143,7 @@ namespace BlogTool.ViewModel
             }
         }
 
-        private void HomePageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void CategoryPageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(this.Entities))
             {
@@ -195,65 +167,6 @@ namespace BlogTool.ViewModel
             RemoveCategory(obj);
         }
 
-        private async void ImportFromMetaWeblogAction()
-        {
-            var dialog = new CustomDialog()
-            {
-                Content = new UserControl()
-                {
-                    Content = new MetaWeblogInputDialog() { Name = "MainDialog" }
-
-                },
-
-                Title = "从MetaWeblog导入"
-            };
-
-            await DialogManager.ShowMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
-
-            dialog.FindChild<MetaWeblogInputDialog>("MainDialog").CancelButton.Click += async (o, e) =>
-            {
-                await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
-
-            };
-            dialog.FindChild<MetaWeblogInputDialog>("MainDialog").CommitButton.Click += (o, e) =>
-            {
-
-                var username = dialog.FindChild<MetaWeblogInputDialog>("MainDialog").TextBoxUsername.Text;
-                var password = dialog.FindChild<MetaWeblogInputDialog>("MainDialog").TextBoxPassword.Password;
-                var metaWeblogURL = dialog.FindChild<MetaWeblogInputDialog>("MainDialog").TextBoxMetaWeblogURL.Text;
-                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-                {
-                    return;
-                }
-                var task = InvokeHelper.InvokeOnUi<ProcessResultDto[]>(null, () =>
-                {
-
-                    var getMarkdownOption = new GetMarkdownOption()
-                    {
-                        ReadMorePosition = -1,
-                        MetaWeblogOption = new Core.Options.MetaWeblogOption
-                        {
-                            MetaWeblogURL = metaWeblogURL,
-                            Password = password,
-                            Username = username,
-                        },
-                    };
-                    return ProcessMarkdowns(getMarkdownOption, new MetaWeblogMarkdownProvider());
-
-                }, async (t) =>
-                {
-                    foreach (var item in t)
-                    {
-                        this.ProcessResultList.Add(item);
-                    }
-                    await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
-
-                });
-            };
-
-
-
-        }
 
 
         private void ImportFromLocalAction()
@@ -359,9 +272,9 @@ namespace BlogTool.ViewModel
         internal void RemoveCategory(IMarkdown CategoryInfo)
         {
             string markdownFilePath = (CategoryInfo as HexoMarkdownFileInfo).FilePath;
-            string directoryName = Path.GetDirectoryName(markdownFilePath);  
+            string directoryName = Path.GetDirectoryName(markdownFilePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(markdownFilePath);
-            string directoryToDelete = Path.Combine(directoryName, fileNameWithoutExtension); 
+            string directoryToDelete = Path.Combine(directoryName, fileNameWithoutExtension);
             try
             {
                 if (Directory.Exists(directoryToDelete))
@@ -391,11 +304,11 @@ namespace BlogTool.ViewModel
             {
                 Console.WriteLine("删除文件时发生错误: " + ex.Message);
             }
-            
+
         }
 
 
-    
+
 
         private object _entity;
 
@@ -444,16 +357,11 @@ namespace BlogTool.ViewModel
 
         public bool HasValue => this.Entities.Count > 0;
 
-        public List<MenuCommand> ImportOptions => new List<MenuCommand>() {
-            new MenuCommand("从剪贴板导入", ImportFromClipboardAction, () => true),
-            new MenuCommand("从文件夹导入", ImportFromLocalAction, () => true),
-            new MenuCommand("从MetaWeblog接口导入", ImportFromMetaWeblogAction, () => true),
-        };
-
         public RelayCommand GetDataCommand { get; set; }
 
         public RelayCommand RefreshCommand { get; set; }
-        public RelayCommand ClearCommand { get; set; }
+        public RelayCommand ImportFromClipboardCommand { get; set; }
+        public RelayCommand ImportFromLocalCommand { get; set; }
         public RelayCommand<IMarkdown> RemoveCommand { get; set; }
 
 

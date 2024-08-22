@@ -12,6 +12,7 @@ namespace BlogTool.ViewModel
         }
 
         public MainViewModel Main => Ioc.Default.GetRequiredService<MainViewModel>();
+        public HomePageViewModel Home => Ioc.Default.GetRequiredService<HomePageViewModel>();
         public CategoryPageViewModel CategoryPage => Ioc.Default.GetRequiredService<CategoryPageViewModel>();
         public SettingPageViewModel SettingPage => Ioc.Default.GetRequiredService<SettingPageViewModel>();
 

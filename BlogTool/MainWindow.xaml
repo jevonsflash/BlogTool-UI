@@ -88,7 +88,17 @@
                 <!--  Items  -->
                 <mah:HamburgerMenu.ItemsSource>
                     <mah:HamburgerMenuItemCollection>
-                        <mah:HamburgerMenuIconItem Label="文章"
+                        <mah:HamburgerMenuIconItem Label="生成"
+                                                   Tag="../View/HomePage.xaml">
+                            <mah:HamburgerMenuIconItem.Icon>
+                                <iconPacks:PackIconMaterial  Margin="12"
+                                                             Kind="Orbit"
+                                                             Foreground="White"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"></iconPacks:PackIconMaterial>
+                            </mah:HamburgerMenuIconItem.Icon>
+                        </mah:HamburgerMenuIconItem>
+                        <mah:HamburgerMenuIconItem Label="批量生成"
                                                    Tag="../View/CategoryPage.xaml">
                             <mah:HamburgerMenuIconItem.Icon>
                                 <iconPacks:PackIconMaterial  Margin="12"
