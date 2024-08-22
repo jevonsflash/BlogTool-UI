@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using BlogTool.Core.Markdown;
 using BlogTool.Helper;
 using BlogTool.Model;
 using BlogTool.ViewModel;
@@ -63,6 +64,25 @@ namespace BlogTool.View
 
             }
 
+        }
+
+        private void ButtonOpen_OnClick(object sender, RoutedEventArgs e)
+        {
+            var item = sender as FrameworkContentElement;
+            var markdown = item.DataContext as HexoMarkdownFileInfo;
+
+            string path = markdown.FilePath;
+            try
+            {
+                System.Diagnostics.Process.Start("explorer.exe", "/select," + path);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("无法打开:" + ex);
+
+
+            }
         }
     }
 }
