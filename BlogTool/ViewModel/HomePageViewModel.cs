@@ -27,19 +27,22 @@ using MahApps.Metro.Controls.Dialogs;
 using MahApps.Metro.Controls;
 using Microsoft.Win32;
 using System.Windows.Controls;
+using System.Reflection.Metadata;
 
 namespace BlogTool.ViewModel
 {
-    public class CategoryPageViewModel : ObservableObject
+    public class HomePageViewModel : ObservableObject
     {
         private static string _fileName = null;
         private static string _excelFilesXlsxXls = "Markdown文件|*.md|所有文件|*.*";
         private static readonly string basePath = CommonHelper.AppBasePath;
         private ObservableCollection<object> _categoryTypeInfos;
+        AssetsStoreOption assetsStoreOption;
+        IAssetsStoreProvider assetsStoreProvider;
 
-        public CategoryPageViewModel()
+        public HomePageViewModel()
         {
-            this.ProcessResultList = new ObservableCollection<ProcessResultDto>();
+
             this.RefreshCommand = new RelayCommand(() =>
             {
                 InitData();
@@ -49,7 +52,7 @@ namespace BlogTool.ViewModel
             this.ImportFromLocalCommand= new RelayCommand(ImportFromLocalAction, () => true);
 
             this.RemoveCommand = new RelayCommand<IMarkdown>(RemoveAction);
-            this.PropertyChanged += CategoryPageViewModel_PropertyChanged;
+            this.PropertyChanged += HomePageViewModel_PropertyChanged;
             InitData();
         }
 
@@ -143,7 +146,7 @@ namespace BlogTool.ViewModel
             }
         }
 
-        private void CategoryPageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void HomePageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(this.Entities))
             {
@@ -172,7 +175,7 @@ namespace BlogTool.ViewModel
         private void ImportFromLocalAction()
         {
 
-            var task = InvokeHelper.InvokeOnUi<ProcessResultDto[]>(null, () =>
+            var task = InvokeHelper.InvokeOnUi<IMarkdown>(null, () =>
             {
                 var getMarkdownOption = new GetMarkdownOption()
                 {
@@ -201,10 +204,7 @@ namespace BlogTool.ViewModel
 
             }, (t) =>
             {
-                foreach (var item in t)
-                {
-                    this.ProcessResultList.Add(item);
-                }
+                //todo
 
             });
 
@@ -244,7 +244,7 @@ namespace BlogTool.ViewModel
                 {
                     return;
                 }
-                var task = InvokeHelper.InvokeOnUi<ProcessResultDto[]>(null, () =>
+                var task = InvokeHelper.InvokeOnUi<IMarkdown>(null, () =>
                 {
 
                     var getMarkdownOption = new GetMarkdownOption()
@@ -255,9 +255,9 @@ namespace BlogTool.ViewModel
 
                 }, async (t) =>
                 {
-                    foreach (var item in t)
+                    if (t!=null)
                     {
-                        this.ProcessResultList.Add(item);
+                        this.MarkdownContent=t;
                     }
                     await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
 
@@ -322,6 +322,19 @@ namespace BlogTool.ViewModel
             }
         }
 
+        private IMarkdown _markdownContent;
+
+        public IMarkdown MarkdownContent
+        {
+            get { return _markdownContent; }
+            set
+            {
+                _markdownContent = value;
+                OnPropertyChanged();
+            }
+        }
+
+
 
 
         public ObservableCollection<object> Entities
@@ -342,17 +355,6 @@ namespace BlogTool.ViewModel
         }
 
 
-        private ObservableCollection<ProcessResultDto> _processResultList;
-
-        public ObservableCollection<ProcessResultDto> ProcessResultList
-        {
-            get { return _processResultList; }
-            set
-            {
-                _processResultList = value;
-                OnPropertyChanged(nameof(ProcessResultList));
-            }
-        }
 
 
         public bool HasValue => this.Entities.Count > 0;
@@ -381,7 +383,7 @@ namespace BlogTool.ViewModel
         }
 
 
-        private string MarkdownHandler(List<ProcessResultDto> processResultList, SettingInfo config, HttpClient client, AssetsStoreHandler handler, GetMarkdownOption getMarkdownOption, AssetsStoreOption assetsStoreOption, string templatePath, string fileDirectory, IMarkdown md)
+        private string MarkdownHandler(SettingInfo config, HttpClient client, AssetsStoreHandler handler, GetMarkdownOption getMarkdownOption, AssetsStoreOption assetsStoreOption, string templatePath, string fileDirectory, IMarkdown md)
         {
             string fileFullPath;
             var fileName = md.Title + ".md";
@@ -433,7 +435,6 @@ namespace BlogTool.ViewModel
                 var imgElement = imgContent.Item1;
                 if (imgPathDic.ContainsKey(handler.IsReplaceAllElement ? imgElement : img))
                 {
-                    processResultList.Add(new ProcessResultDto(DateTime.Now, $"已上传图片跳过：{img} "));
                     continue;
                 }
 
@@ -455,8 +456,7 @@ namespace BlogTool.ViewModel
                         }
                         else
                         {
-                            processResultList.Add(new ProcessResultDto(DateTime.Now, $"无法解析图片名称：{img} "));
-
+                            throw new Exception($"无法解析图片名称：{img} ");
                             continue;
                         }
                     }
@@ -466,7 +466,7 @@ namespace BlogTool.ViewModel
                         var imgPhyPath = HttpUtility.UrlDecode(Path.Combine(fileDirectory, img));
                         if (File.Exists(imgPhyPath) == false)
                         {
-                            processResultList.Add(new ProcessResultDto(DateTime.Now, $"请检查Markdown图片路径是否正确，文件不存在：{imgPhyPath} "));
+                            throw new Exception($"请检查Markdown图片路径是否正确，文件不存在：{imgPhyPath} ");
                             continue;
 
                         }
@@ -483,7 +483,6 @@ namespace BlogTool.ViewModel
                 }
                 catch (Exception ex) when (config.SkipFileWhenException)
                 {
-                    processResultList.Add(new ProcessResultDto(DateTime.Now, $"跳过图片[{img}]，异常原因：处理失败-{ex.Message}"));
                 }
 
             }
@@ -495,24 +494,20 @@ namespace BlogTool.ViewModel
 
             var content = string.Concat(templateMd, fileContent);
             DirFileHelper.WriteText(fileFullPath, content);
-            processResultList.Add(new ProcessResultDto(DateTime.Now, $"Markdown文件处理完成，文件保存在：{fileFullPath}"));
             return fileFullPath;
         }
 
 
-        private ProcessResultDto[] ProcessMarkdowns(GetMarkdownOption getMarkdownOption, IMarkdownProvider markdownCreatorProvider, params object[] objects)
+        private IMarkdown ProcessMarkdowns(GetMarkdownOption getMarkdownOption, IMarkdownProvider markdownCreatorProvider, params object[] objects)
         {
-            var processResultList = new List<ProcessResultDto>();
             try
             {
                 var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
                 getMarkdownOption.RecentTakeCount = config.RecentTakeCount;
-                var client = new HttpClient();
 
                 var creator = new MarkdownCreator();
-                var handler = new AssetsStoreHandler();
 
-                var assetsStoreOption = new AssetsStoreOption()
+                AssetsStoreOption assetsStoreOption = new AssetsStoreOption()
                 {
                     OutputPath = config.OutputPath,
                     CompressionImage = false,
@@ -542,52 +537,43 @@ namespace BlogTool.ViewModel
 
                 creator.SetMarkdownProvider(getMarkdownOption, markdownCreatorProvider);
                 var mds = creator.Create(objects);
-
-                string templatePath = Path.Combine(config.HexoPath, "scaffolds", "post.md");
-
-                string fileFullPath;
-
-
-                var fileDirectory = Directory.Exists(config.OutputPath) == false
-                    ? Directory.CreateDirectory(config.OutputPath).FullName
-                    : new DirectoryInfo(config.OutputPath).FullName;
-
-
-
-                if (File.Exists(templatePath))
-                {
-                    int index = 1;
-                    foreach (var md in mds)
-                    {
-                        var progress = $"{index}|{mds.Count}";
-                        WeakReferenceMessenger.Default.Send<string, string>(progress, MessengerToken.UPDATEPROGRESS);
-                        assetsStoreOption.SubPath=md.Title;
-                        handler.SetAssetsStoreProvider(assetsStoreOption, assetsStoreProvider);
-
-                        fileFullPath = MarkdownHandler(processResultList, config, client, handler, getMarkdownOption, assetsStoreOption, templatePath, fileDirectory, md);
-                        index++;
-                    }
-
-                }
-                else
-                {
-
-                    processResultList.Add(new ProcessResultDto(DateTime.Now, $"找不到Hexo目录：{templatePath} "));
-
-                }
-
+                return mds.FirstOrDefault();
             }
             catch (ArgumentException ex)
             {
-                processResultList.Add(new ProcessResultDto(DateTime.Now, string.Format("{0}参数错误:{0}{1}", Environment.NewLine, ex)));
+
+                MessageBox.Show(string.Format("{0}参数错误:{0}{1}", Environment.NewLine, ex));
             }
-            catch (Exception ex)
-            {
-                processResultList.Add(new ProcessResultDto(DateTime.Now, string.Format("{0}未知错误:{0}{1}", Environment.NewLine, ex)));
-            }
-            return processResultList.ToArray();
+            return null;
         }
+        private void Continue(GetMarkdownOption getMarkdownOption, IMarkdown md)
+        {
+            var handler = new AssetsStoreHandler();
+            var client = new HttpClient();
 
+            var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
+
+            string templatePath = Path.Combine(config.HexoPath, "scaffolds", "post.md");
+
+            string fileFullPath;
+
+
+            var fileDirectory = Directory.Exists(config.OutputPath) == false
+                ? Directory.CreateDirectory(config.OutputPath).FullName
+                : new DirectoryInfo(config.OutputPath).FullName;
+
+
+
+            if (File.Exists(templatePath))
+            {
+
+                assetsStoreOption.SubPath=md.Title;
+                handler.SetAssetsStoreProvider(assetsStoreOption, assetsStoreProvider);
+
+                fileFullPath = MarkdownHandler(config, client, handler, getMarkdownOption, assetsStoreOption, templatePath, fileDirectory, md);
+
+            }
+
+        }
     }
-
 }

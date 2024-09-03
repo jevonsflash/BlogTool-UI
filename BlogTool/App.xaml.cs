@@ -28,6 +28,7 @@ namespace BlogTool
                 Ioc.Default.ConfigureServices(
                     new ServiceCollection()
                     .AddSingleton<MainViewModel>()
+                    .AddSingleton<HomePageViewModel>()
                     .AddSingleton<CategoryPageViewModel>()
                     .AddSingleton<SettingPageViewModel>()
                     .BuildServiceProvider());

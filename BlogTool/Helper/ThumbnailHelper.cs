@@ -32,7 +32,7 @@ namespace BlogTool.Helper
                 phantomJS.ToolPath = Path.Combine(basePath, "libs\\phantomjs-2.1.1-linux-x86_64\\bin");
 
             }
-            var scriptPath = Path.Combine(basePath, "js\\echarts-converts.js");
+            var scriptPath = Path.Combine(basePath, "js\\thumbnail-converts.js");
 
 
 
@@ -50,6 +50,8 @@ namespace BlogTool.Helper
             phantomJS.ErrorReceived += (sender, e) =>
             {
                 Console.WriteLine("PhantomJS error: {0}", e.Data);
+                phantomJS.Abort();
+
             };
             var jsonSetting = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
 
@@ -59,7 +61,6 @@ namespace BlogTool.Helper
             if (exportOption.Width > 0) args = args.Concat(new string[] { "-width", exportOption.Width.ToString() }).ToArray();
 
             phantomJS.Run(scriptPath, args);
-            phantomJS.Abort();
             return tcs.Task;
         }
     }

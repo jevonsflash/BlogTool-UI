@@ -1,4 +1,15 @@
-(function () {
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD
+        define([], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        // Node.js/CommonJS
+        module.exports = factory();
+    } else {
+        // Browser globals
+        root.generateGrad = factory();
+    }
+}(this, function () {
     var svg = "";
 
     function rand(min, max) {
@@ -12,7 +23,7 @@
         s /= 100;
         l /= 100;
 
-        let c = (1 - Math.abs(2 * l - 1)) * s,
+        var c = (1 - Math.abs(2 * l - 1)) * s,
             x = c * (1 - Math.abs(((h / 60) % 2) - 1)),
             m = l - c / 2,
             r = 0,
@@ -57,50 +68,37 @@
         var svgGrad = [];
         var svgRect = [];
 
-        for (i = 0; i < layers; i++) {
+        for (var i = 0; i < layers; i++) {
             var xPos = rand(0, 100);
             var yPos = rand(0, 100);
             var hue = rand(0, 360);
             var saturation = rand(85, 95);
             var lightness = rand(50, 70);
             var rotation = rand(0, 365);
-            var newGrad = `radial-gradient(at ${xPos}% ${yPos}%, hsla(${hue}, ${saturation}%, ${lightness}%, 1) 0, hsla(${hue}, ${saturation}%, ${lightness}%, 0) 50%)`;
+
+            // Ìæ»»Ä£°å×Ö·û´®Îª×Ö·û´®Æ´½Ó
+            var newGrad = 'radial-gradient(at ' + xPos + '% ' + yPos + '%, hsla(' + hue + ', ' + saturation + '%, ' + lightness + '%, 1) 0, hsla(' + hue + ', ' + saturation + '%, ' + lightness + '%, 0) 50%)';
             grad.push(newGrad);
 
-            var newSvgGrad = `<radialGradient id="grad${i}" cx="${xPos}%" cy="${yPos}%" r="100%" fx="${xPos}%" fy="${yPos}%" gradientUnits="objectBoundingBox">
-                              <stop offset="0" stop-color="${HSLToRGB(
-                hue,
-                saturation,
-                lightness,
-                1
-            )}" stop-opacity="1" />
-                              <stop offset="0.5" stop-color="${HSLToRGB(
-                hue,
-                saturation,
-                lightness,
-                0
-            )}" stop-opacity="0" />
-                          </radialGradient>`;
+            var newSvgGrad = '<radialGradient id="grad' + i + '" cx="' + xPos + '%" cy="' + yPos + '%" r="100%" fx="' + xPos + '%" fy="' + yPos + '%" gradientUnits="objectBoundingBox">' +
+                '<stop offset="0" stop-color="' + HSLToRGB(hue, saturation, lightness, 1) + '" stop-opacity="1" />' +
+                '<stop offset="0.5" stop-color="' + HSLToRGB(hue, saturation, lightness, 0) + '" stop-opacity="0" />' +
+                '</radialGradient>';
             svgGrad.push(newSvgGrad);
-            var newSvgRect = `<rect x="0" y="0" width="3000" height="2000" fill="url(#grad${i})" />`;
+
+            var newSvgRect = '<rect x="0" y="0" width="3000" height="2000" fill="url(#grad' + i + ')" />';
             svgRect.push(newSvgRect);
         }
 
-        var svgTop = `<svg viewBox="0 0 3000 2000" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <defs>`;
-        var svgBg = `<rect x="0" y="0" width="3000" height="2000" fill="#${bgColor}" />`;
-        svg =
-            svgTop + [...svgGrad] + "</defs>" + svgBg + [...svgRect] + "</svg>";
+        var svgTop = '<svg viewBox="0 0 3000 2000" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs>';
+        var svgBg = '<rect x="0" y="0" width="3000" height="2000" fill="#' + bgColor + '" />';
+        var svg = svgTop + svgGrad.join('') + "</defs>" + svgBg + svgRect.join('') + "</svg>";
+
         display.innerHTML = svg;
 
-        var copyCss =
-            "background-color: #" +
-            bgColor +
-            ";<br/>background-image: " +
-            grad.join(",<br/>") +
-            ";";
+        var copyCss = 'background-color: #' + bgColor + ';<br/>background-image: ' + grad.join(",<br/>") + ';';
         // document.getElementById("css-code").innerHTML = copyCss;
-
     }
 
     function saveSvg(svgEl, name) {
@@ -122,6 +120,7 @@
 
     }
 
-    // INIT
-    generateGrad('#26004d', 7);
-}());
+    return generateGrad
+
+}));
+

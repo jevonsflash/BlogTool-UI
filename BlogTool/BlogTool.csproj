@@ -16,8 +16,8 @@
 		</Content>
 	</ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="BlogTool.Core" Version="0.3.0" />
+	<ItemGroup>		
+		<PackageReference Include="BlogTool.Core" Version="0.3.0" />		
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 		<PackageReference Include="gong-wpf-dragdrop" Version="3.2.1" />
 		<PackageReference Include="MahApps.Metro" Version="2.4.10" />

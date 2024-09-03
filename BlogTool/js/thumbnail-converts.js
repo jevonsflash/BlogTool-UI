@@ -3,12 +3,10 @@
     var fs = require('fs');
     var config = {
         JQUERY: 'jquery-3.6.3.min.js',
-        ESL: 'html2canvas.min.js',
         ECHARTS: 'thumbnail-bg-gen.js',
         DEFAULT_WIDTH: '1920',
         DEFAULT_HEIGHT: '800'
-    }, parseParams, render, pick, usage;
-
+    }, parseParams, render, pick, usage, params;
     usage = function () {
         console.log("\nUsage: phantomjs echarts-convert.js -options options -outfile filename -width width -height height"
             + "OR"
@@ -36,21 +34,11 @@
         for (i = 0; i < system.args.length; i += 1) {
             if (system.args[i].charAt(0) === '-') {
                 key = system.args[i].substr(1, i.length);
-                if (key === 'infile') {
-                    key = 'options';
-                    try {
-                        map[key] = fs.read(system.args[i + 1]).replace(/^\s+/, '');
-                    } catch (e) {
-                        console.log('Error: cannot find file, ' + system.args[i + 1]);
-                        phantom.exit();
-                    }
-                } else {
+                map[key] = system.args[i + 1].replace(/^\s+/, '');
 
-                    map[key] = system.args[i + 1].replace(/^\s+/, '');
-                }
             }
         }
-        return map;
+        params = map;
     };
 
     render = function (params) {
@@ -65,7 +53,7 @@
             console.log(msg);
         };
 
-        createChart = async function (inputOption, width, height, config) {
+        createChart = function (width, height, config) {
             var counter = 0;
             function decrementImgCounter() {
                 counter -= 1;
@@ -74,14 +62,6 @@
                 }
             }
 
-            function loadScript(varStr, codeStr) {
-                var script = $('<script>').attr('type', 'text/javascript');
-                script.html('var ' + varStr + ' = ' + codeStr);
-                document.getElementsByTagName("head")[0].appendChild(script[0]);
-                if (window[varStr] !== undefined) {
-                    console.log('Echarts.' + varStr + ' has been parsed');
-                }
-            }
 
             function loadImages() {
                 var images = $('image'), i, img;
@@ -96,45 +76,48 @@
                     console.log('The images have been loaded');
                 }
             }
-            if (inputOption != 'undefined') {
-                loadScript('options', inputOption);
-            }
 
-            $(document.body).css('backgroundColor', 'white');
-            var container = $("<div>").appendTo(document.body);
-            container.attr('id', 'container');
-            container.css({
-                width: width,
-                height: height
-            });
 
-            generateGrad("#000000", 2, container[0]);
-            var result;
-            var canvas = await html2canvas($("#container"));
-            result = canvas.toDataURL()
-            return result;
+            var newDiv = document.createElement("div");
+            newDiv.id = "display";
+            newDiv.style.width = "300px";
+            newDiv.style.height = "200px";
+            newDiv.style.background = "black";
+
+            // 将新的 div 追加到这个元素中
+            document.body.appendChild(newDiv);
+            this.generateGrad("#000000", 7, newDiv);
+
         };
 
         // parse the params
         page.open("about:blank", function (status) {
-            page.injectJs(config.ESL);
+            //page.injectJs(config.ESL);
             page.injectJs(config.JQUERY);
             page.injectJs(config.ECHARTS);
 
 
             var width = pick(params.width, config.DEFAULT_WIDTH);
             var height = pick(params.height, config.DEFAULT_HEIGHT);
+            console.log('start rendering:' + params.outfile);
 
             var base64 = page.evaluate(createChart, params.options, width, height, config);
             //fs.write("base64.txt", base64);
             // define the clip-rectangle
-            page.clipRect = {
-                top: 0,
-                left: 0,
-                width: width,
+            console.log('rendering.. :' + params.outfile);
+            console.log('start rendering page:' + params.outfile);
 
-                height: height
-            };
+            var clipRect = page.evaluate(function () {
+                var element = document.getElementById('display');  // 目标元素
+                var rect = element.getBoundingClientRect();  // 获取元素的边界
+                return {
+                    top: rect.top,
+                    left: rect.left,
+                    width: rect.width,
+                    height: rect.height
+                };
+            });
+            page.clipRect = clipRect;
             page.render(params.outfile);
             console.log('render complete:' + params.outfile);
             phantom.exit();
@@ -142,13 +125,8 @@
     };
 
 
-
-    if (params.options === undefined || params.options.length === 0) {
-        console.log("ERROR: No options or infile found.");
-        usage();
-        phantom.exit();
-    }
-
+    parseParams()
+    console.warn(params);
     if (params.outfile === undefined) {
         var tmpDir = fs.workingDirectory + '/tmp';
 
@@ -161,6 +139,13 @@
         }
         params.outfile = tmpDir + "/" + new Date().getTime() + ".png";
     }
+    else {
+        params.outfile = params.outfile + "/" + new Date().getTime() + ".png";
+    }
+
+
 
     render(params);
+
+
 }());

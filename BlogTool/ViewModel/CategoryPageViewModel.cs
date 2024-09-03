@@ -30,14 +30,14 @@ using System.Windows.Controls;
 
 namespace BlogTool.ViewModel
 {
-    public class HomePageViewModel : ObservableObject
+    public class CategoryPageViewModel : ObservableObject
     {
         private static string _fileName = null;
         private static string _excelFilesXlsxXls = "Markdown文件|*.md|所有文件|*.*";
         private static readonly string basePath = CommonHelper.AppBasePath;
         private ObservableCollection<object> _categoryTypeInfos;
 
-        public HomePageViewModel()
+        public CategoryPageViewModel()
         {
             this.ProcessResultList = new ObservableCollection<ProcessResultDto>();
             this.RefreshCommand = new RelayCommand(() =>
@@ -47,7 +47,7 @@ namespace BlogTool.ViewModel
             });
             this.ClearCommand = new RelayCommand(ClearAction);
             this.RemoveCommand = new RelayCommand<IMarkdown>(RemoveAction);
-            this.PropertyChanged += HomePageViewModel_PropertyChanged;
+            this.PropertyChanged += CategoryPageViewModel_PropertyChanged;
             InitData();
         }
 
@@ -66,7 +66,7 @@ namespace BlogTool.ViewModel
 
                 foreach (var dir in Directory.GetDirectories(config.OutputPath))
                 {
-                    Directory.Delete(dir, true); 
+                    Directory.Delete(dir, true);
                     Console.WriteLine("子目录已删除: " + dir);
                 }
 
@@ -171,7 +171,7 @@ namespace BlogTool.ViewModel
             }
         }
 
-        private void HomePageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void CategoryPageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(this.Entities))
             {
@@ -237,6 +237,12 @@ namespace BlogTool.ViewModel
                             Password = password,
                             Username = username,
                         },
+                        AigcOption=new Core.Options.AigcOption()
+                        {
+                            Provider="DashScope",
+                            Target= "Description,Tag",
+                            ApiKey= "sk-abfb5186d29e4a0cbd6c329517b61cce"
+                        }
                     };
                     return ProcessMarkdowns(getMarkdownOption, new MetaWeblogMarkdownProvider());
 
@@ -359,9 +365,9 @@ namespace BlogTool.ViewModel
         internal void RemoveCategory(IMarkdown CategoryInfo)
         {
             string markdownFilePath = (CategoryInfo as HexoMarkdownFileInfo).FilePath;
-            string directoryName = Path.GetDirectoryName(markdownFilePath);  
+            string directoryName = Path.GetDirectoryName(markdownFilePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(markdownFilePath);
-            string directoryToDelete = Path.Combine(directoryName, fileNameWithoutExtension); 
+            string directoryToDelete = Path.Combine(directoryName, fileNameWithoutExtension);
             try
             {
                 if (Directory.Exists(directoryToDelete))
@@ -391,11 +397,11 @@ namespace BlogTool.ViewModel
             {
                 Console.WriteLine("删除文件时发生错误: " + ex.Message);
             }
-            
+
         }
 
 
-    
+
 
         private object _entity;
 
@@ -505,6 +511,7 @@ namespace BlogTool.ViewModel
                 templateMd = templateMd.Replace("tags:", keywordsNode);
             }
 
+            templateMd = templateMd.Replace("{{ description }}", md.Description);
 
 
             var fileContent = md.Content;
