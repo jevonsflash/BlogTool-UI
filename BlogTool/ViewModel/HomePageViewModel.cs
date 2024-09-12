@@ -28,13 +28,15 @@ using MahApps.Metro.Controls;
 using Microsoft.Win32;
 using System.Windows.Controls;
 using System.Reflection.Metadata;
+using YamlDotNet.Core.Tokens;
+using BlogTool.Markdown.Implements;
 
 namespace BlogTool.ViewModel
 {
     public class HomePageViewModel : ObservableObject
     {
         private static string _fileName = null;
-        private static string _excelFilesXlsxXls = "Markdown文件|*.md|所有文件|*.*";
+        private static string _markdownFilesMd = "Markdown文件|*.md|所有文件|*.*";
         private static readonly string basePath = CommonHelper.AppBasePath;
         private ObservableCollection<object> _categoryTypeInfos;
         AssetsStoreOption assetsStoreOption;
@@ -52,113 +54,19 @@ namespace BlogTool.ViewModel
             this.ImportFromLocalCommand= new RelayCommand(ImportFromLocalAction, () => true);
 
             this.RemoveCommand = new RelayCommand<IMarkdown>(RemoveAction);
-            this.PropertyChanged += HomePageViewModel_PropertyChanged;
             InitData();
         }
 
 
         public void InitData()
         {
-            IList<IMarkdown> data = null;
-
-            var task = InvokeHelper.InvokeOnUi<IList<IMarkdown>>(null, () =>
-        {
-            var config = LocalDataHelper.ReadObjectLocal<SettingInfo>();
-
-            var markdownFiles = Directory.GetFiles(config.OutputPath, "*.md", SearchOption.TopDirectoryOnly);
-
-            var result = new List<IMarkdown>();
-
-            foreach (var markdownFile in markdownFiles)
-            {
-                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(markdownFile);
-
-                result.Add(new HexoMarkdownFileInfo()
-                {
-                    FilePath = markdownFile,
-                    Title = fileNameWithoutExtension,
-                });
-            }
-
-
-
-
-            return result;
-
-
-        }, (t) =>
-             {
-                 data = t;
-                 try
-                 {
-                     this.Entities = new ObservableCollection<object>(data);
-                     this.Entities.CollectionChanged += CategoryInfos_CollectionChanged;
-
-
-                 }
-                 catch (Exception e)
-                 {
-                     Console.WriteLine(e);
-                     throw;
-                 }
-             });
-
+            //todo:
 
         }
 
 
-        private HexoPostMetadata ReadHexoPostMetadata(string filePath)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine("File not found: " + filePath);
-                return null;
-            }
 
-            string content = File.ReadAllText(filePath);
 
-            // 查找 YAML 头部信息的开始和结束位置  
-            int start = content.IndexOf("---");
-            int end = content.LastIndexOf("---") + 3; // 加上 "---" 的长度  
-
-            if (start == -1 || end == -1 || start >= end)
-            {
-                Console.WriteLine("No YAML front matter found in the file.");
-                return null;
-            }
-
-            // 提取 YAML 头部信息  
-            string yamlContent = content.Substring(start, end - start);
-
-            // 使用 YamlDotNet 解析 YAML 内容  
-            var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(new CamelCaseNamingConvention()) // 根据需要选择命名约定  
-                .Build();
-
-            try
-            {
-                return deserializer.Deserialize<HexoPostMetadata>(yamlContent);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error deserializing YAML: " + ex.Message);
-                return null;
-            }
-        }
-
-        private void HomePageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(this.Entities))
-            {
-                OnPropertyChanged(nameof(HasValue));
-            }
-
-        }
-
-        private void CategoryInfos_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            OnPropertyChanged(nameof(HasValue));
-        }
 
         private void RemoveAction(IMarkdown obj)
         {
@@ -180,15 +88,21 @@ namespace BlogTool.ViewModel
                 var getMarkdownOption = new GetMarkdownOption()
                 {
                     ReadMorePosition = -1,
+                    AigcOption=new Core.Options.AigcOption()
+                    {
+                        Provider="DashScope",
+                        Target= "Description,Tag",
+                        ApiKey= "sk-abfb5186d29e4a0cbd6c329517b61cce"
+                    }
                 };
                 string path = Path.Combine(basePath, "Data");
                 var openFileDialog = new OpenFileDialog();
                 openFileDialog.InitialDirectory = path;
-                openFileDialog.Filter = _excelFilesXlsxXls;
+                openFileDialog.Filter = _markdownFilesMd;
                 openFileDialog.FileName = _fileName;
                 openFileDialog.AddExtension = true;
                 openFileDialog.RestoreDirectory = true;
-                openFileDialog.Multiselect = true;
+                openFileDialog.Multiselect = false;
                 var result = openFileDialog.ShowDialog();
                 string[] filePaths;
                 if (result == true)
@@ -233,31 +147,29 @@ namespace BlogTool.ViewModel
             };
             dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxContent.TextChanged += (o, e) =>
             {
-                var title = dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxTitle.Text;
                 var content = dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxContent.Text;
-                if (string.IsNullOrEmpty(title))
-                {
-                    title = content.Trim().Substring(0, Math.Min(content.Trim().Length, 12));
 
-                }
-                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(content))
-                {
-                    return;
-                }
                 var task = InvokeHelper.InvokeOnUi<IMarkdown>(null, () =>
                 {
 
                     var getMarkdownOption = new GetMarkdownOption()
                     {
                         ReadMorePosition = -1,
+                        AigcOption=new Core.Options.AigcOption()
+                        {
+                            Provider="DashScope",
+                            Target= "Description,Tag",
+                            ApiKey= "sk-abfb5186d29e4a0cbd6c329517b61cce"
+                        }
                     };
-                    return ProcessMarkdowns(getMarkdownOption, new TextMarkdownProvider(), new { Title = title, Content = content });
+                    return ProcessMarkdowns(getMarkdownOption, new TextMarkdownProvider(), new { Title = string.Empty, Content = content });
 
                 }, async (t) =>
                 {
                     if (t!=null)
                     {
                         this.MarkdownContent=t;
+                        this.PreviewInnerHtml= await JavaScriptHelper.GetHtmlFromMarkdownAsync(new Common.GetHtmlFromMarkdownOption() { Markdown=this.MarkdownContent.Content });
                     }
                     await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
 
@@ -287,18 +199,6 @@ namespace BlogTool.ViewModel
                     File.Delete(markdownFilePath);
                     Console.WriteLine("文件已成功删除: " + markdownFilePath);
                 }
-
-                var current = Entities.FirstOrDefault(c => (c as IMarkdown).Title == CategoryInfo.Title);
-                if (Entities.Any(c => (c as IMarkdown).Title == CategoryInfo.Title))
-                {
-
-                    Entities.RemoveAt(Entities.IndexOf(current));
-
-                }
-                else
-                {
-                    MessageBox.Show("条目不存在");
-                }
             }
             catch (Exception ex)
             {
@@ -308,19 +208,6 @@ namespace BlogTool.ViewModel
         }
 
 
-
-
-        private object _entity;
-
-        public object Entity
-        {
-            get { return _entity; }
-            set
-            {
-                _entity = value;
-                OnPropertyChanged(nameof(Entity));
-            }
-        }
 
         private IMarkdown _markdownContent;
 
@@ -334,31 +221,40 @@ namespace BlogTool.ViewModel
             }
         }
 
-
-
-
-        public ObservableCollection<object> Entities
+        private bool _isRepost;
+        public bool IsRepost
         {
-            get
-            {
-                if (_categoryTypeInfos == null)
-                {
-                    _categoryTypeInfos = new ObservableCollection<object>();
-                }
-                return _categoryTypeInfos;
-            }
+            get { return _isRepost; }
             set
             {
-                _categoryTypeInfos = value;
-                OnPropertyChanged(nameof(Entities));
+                _isRepost = value;
+                OnPropertyChanged(nameof(IsRepost));
             }
         }
 
+        private string _author;
 
+        public string Author
+        {
+            get { return _author; }
+            set
+            {
+                _author = value;
+                OnPropertyChanged(nameof(Author));
+            }
+        }
 
+        private string _previewInnerHtml;
 
-        public bool HasValue => this.Entities.Count > 0;
-
+        public string PreviewInnerHtml
+        {
+            get { return _previewInnerHtml; }
+            set
+            {
+                _previewInnerHtml = value;
+                OnPropertyChanged(nameof(PreviewInnerHtml));
+            }
+        }
         public RelayCommand GetDataCommand { get; set; }
 
         public RelayCommand RefreshCommand { get; set; }
@@ -395,8 +291,13 @@ namespace BlogTool.ViewModel
             templateMd = templateMd.Replace("{{ date }}", md.DateCreated.HasValue ? md.DateCreated.Value.ToString("yyyy-MM-dd HH:mm:ss") : DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             string categoriesNode = "categories:\n";
-            if (md.Keywords != null)
+            if (md.Categories != null)
             {
+                if (IsRepost)
+                {
+                    md.Categories.Add("转载");
+                    templateMd = templateMd.Replace("categories:", categoriesNode);
+                }
                 foreach (var category in md.Categories)
                 {
                     categoriesNode += $"  - {category}\n";
@@ -407,7 +308,9 @@ namespace BlogTool.ViewModel
             string keywordsNode = "tags:\n";
             if (md.Keywords != null)
             {
-                foreach (var keyword in md.Keywords.Split(","))
+                var keywords = md.Keywords.Split(",");
+
+                foreach (var keyword in keywords)
                 {
                     keywordsNode += $"  - {keyword}\n";
                 }
@@ -415,6 +318,7 @@ namespace BlogTool.ViewModel
                 templateMd = templateMd.Replace("tags:", keywordsNode);
             }
 
+            templateMd = templateMd.Replace("{{ description }}", md.Description);
 
 
             var fileContent = md.Content;
@@ -428,7 +332,27 @@ namespace BlogTool.ViewModel
             }
             fileContent = fileContent.Replace("@[toc]", "<!-- toc -->");
 
+            fileContent=AssetsHandler(config, client, handler, assetsStoreOption, fileDirectory, md, fileContent);
+
+            var content = string.Concat(templateMd, fileContent);
+
+            int start = content.IndexOf("---");
+            int end = content.LastIndexOf("---") + 3;
+
+            var hexoPostMetadata = YamlHelper.ReadHexoPostMetadata(start, end, content) as IDictionary<object, object>;
+            if (IsRepost)
+            {
+                hexoPostMetadata["author"]=Author;
+            }
+            content = YamlHelper.WriteHexoPostMetadata(start, end, content, hexoPostMetadata);
+            DirFileHelper.WriteText(fileFullPath, content);
+            return fileFullPath;
+        }
+
+        private string AssetsHandler(SettingInfo config, HttpClient client, AssetsStoreHandler handler, AssetsStoreOption assetsStoreOption, string fileDirectory, IMarkdown md, string fileContent)
+        {
             var imgPathDic = new Dictionary<string, string>();
+
             foreach (var imgContent in RegexUtil.ExtractorImgFromMarkdown(fileContent))
             {
                 var img = imgContent.Item2;
@@ -490,13 +414,8 @@ namespace BlogTool.ViewModel
             //替换
             fileContent = imgPathDic.Keys.Aggregate(
                 fileContent, (current, key) => current.Replace(key, imgPathDic[key]));
-
-
-            var content = string.Concat(templateMd, fileContent);
-            DirFileHelper.WriteText(fileFullPath, content);
-            return fileFullPath;
+            return fileContent;
         }
-
 
         private IMarkdown ProcessMarkdowns(GetMarkdownOption getMarkdownOption, IMarkdownProvider markdownCreatorProvider, params object[] objects)
         {
@@ -546,6 +465,7 @@ namespace BlogTool.ViewModel
             }
             return null;
         }
+
         private void Continue(GetMarkdownOption getMarkdownOption, IMarkdown md)
         {
             var handler = new AssetsStoreHandler();

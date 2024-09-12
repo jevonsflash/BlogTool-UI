@@ -27,6 +27,10 @@
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Left">
+                <CheckBox IsChecked="{Binding IsRepost, Mode=TwoWay}">
+                    <TextBlock  Text="转载"></TextBlock>
+                </CheckBox>
+                <TextBox Height="10" Width="200" Text="{Binding Author, Mode=TwoWay}"></TextBox>
                 <mah:DropDownButton Margin="5"
                                     Width="120"
                                     Content="导入.."
@@ -101,7 +105,8 @@
                                     <TextBlock TextWrapping="Wrap"
                                                Grid.Column="0"><Hyperlink Click="ButtonOpen_OnClick">打开</Hyperlink></TextBlock>
 
-                                    <TextBlock TextWrapping="Wrap" Margin="10,0,0,0"
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="10,0,0,0"
                                                Grid.Column="1"><Hyperlink Click="ButtonRemove_OnClick">删除</Hyperlink></TextBlock>
                                 </Grid>
                             </DataTemplate>

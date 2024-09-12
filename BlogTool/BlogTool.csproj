@@ -20,13 +20,13 @@
 		<PackageReference Include="BlogTool.Core" Version="0.3.0" />		
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 		<PackageReference Include="gong-wpf-dragdrop" Version="3.2.1" />
+		<PackageReference Include="HtmlRenderer.WPF" Version="1.5.0.6" />
 		<PackageReference Include="MahApps.Metro" Version="2.4.10" />
 		<PackageReference Include="MahApps.Metro.IconPacks.Material" Version="4.11.0" />
 		<PackageReference Include="MahApps.Metro.IconPacks.Modern" Version="4.11.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="YamlDotNet" Version="15.1.2" />
-		<PackageReference Include="NReco.PhantomJS" Version="1.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>

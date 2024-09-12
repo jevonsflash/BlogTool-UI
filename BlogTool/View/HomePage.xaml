@@ -55,29 +55,59 @@
                                                                                                  Text=".."></TextBlock></Hyperlink></TextBlock>
 
         </StackPanel>
+   
         <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-                <RowDefinition></RowDefinition>
-                <RowDefinition></RowDefinition>
-                <RowDefinition></RowDefinition>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="1"
-                       Text="{Binding MarkdownContent.Title}"></TextBlock>
-            <TextBlock Grid.Row="2"
-                       Text="{Binding MarkdownContent.Description}"></TextBlock>
-            <TextBlock Grid.Row="1" Grid.RowSpan="3" Grid.Column="1"
-                       Text="{Binding MarkdownContent.Content}"></TextBlock>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <TextBox Grid.Row="0"
+                               Text="{Binding MarkdownContent.Title}"></TextBox>
+                    <TextBox Grid.Row="1"
+                             Text="{Binding MarkdownContent.Keywords}"></TextBox>
+
+                    <TextBox Grid.Row="2"
+                               Text="{Binding MarkdownContent.Description}"></TextBox>
+                    <TextBox Grid.Row="3"
+                             Text="{Binding MarkdownContent.Title}"></TextBox>
+
+                </Grid>
+                <GridSplitter Grid.Column="1"
+                              Width="5"
+                              Margin="15,0"></GridSplitter>
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <WebBrowser x:Name="Web1"></WebBrowser>
+                    <TextBox Grid.Row="1"
+                               Grid.RowSpan="3"
+                               Grid.Column="1"
+                               Text="{Binding MarkdownContent.Content}"></TextBox>
+                </Grid>
+
+            </Grid>
+
+           
 
 
         </Grid>
-        
+
         <Grid Grid.Row="3">
             <Button Click="Button_Click"></Button>
         </Grid>
-     
+
     </Grid>
 </Page>

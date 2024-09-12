@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Reflection.Metadata;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,6 +17,7 @@ namespace BlogTool.View
     public partial class HomePage : Page
     {
         public SettingInfo config { get; }
+        public HomePageViewModel vm => this.DataContext as HomePageViewModel;
 
         public HomePage()
         {
@@ -25,16 +27,47 @@ namespace BlogTool.View
             string path = config.OutputPath;
             this.FileUrlTextBlock.Text = path;
             Loaded+=HomePage_Loaded;
+            Unloaded+=HomePage_Unloaded;
+        }
+
+        private void HomePage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            //Web1.Dispose();
         }
 
         private async void HomePage_Loaded(object sender, RoutedEventArgs e)
         {
+            if (vm.PreviewInnerHtml!=null)
+            {
+                RenderWebBrowser();
+
+            }
+            vm.PropertyChanged+=Vm_PropertyChanged;
+
+        }
+
+        private void Vm_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName==nameof(vm.PreviewInnerHtml))
+            {
+                RenderWebBrowser();
+            }
+        }
+
+        private void RenderWebBrowser()
+        {
+            var content = $@"<html lang=""en""><head>
+  <meta charset=""utf-8"">
+  <title>marked.js preview</title>
+</head>
+<body>{vm.PreviewInnerHtml}
+</body></html>";
+            Web1.NavigateToString(content);
         }
 
         private void ButtonRemove_OnClick(object sender, RoutedEventArgs e)
         {
             var item = sender as FrameworkElement;
-            var vm = this.DataContext as HomePageViewModel;
             vm.RemoveCommand.Execute(item.DataContext);
         }
 
@@ -73,7 +106,7 @@ namespace BlogTool.View
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            await ThumbnailHelper.ExportAsync(new Common.ExportOption() { Width=100, Height=100 });
+            await JavaScriptHelper.ExportThumbnailAsync(new Common.ExportOption() { Width=100, Height=100 });
 
         }
     }

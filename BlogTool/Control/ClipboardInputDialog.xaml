@@ -14,12 +14,8 @@
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
         </Grid.RowDefinitions>
-        <TextBox Margin="0,10"
-                 Grid.Row="0"
-                 x:Name="TextBoxTitle"
-                 mah:TextBoxHelper.ClearTextButton="True"
-                 mah:TextBoxHelper.UseFloatingWatermark="True"
-                 mah:TextBoxHelper.Watermark="标题(可选)" />
+        <TextBlock Margin="0,10"
+                 Grid.Row="0" Text="请在此粘贴Markdown内容，粘贴后将自动解析"/>
         <TextBox Margin="0,10"
                  TextWrapping="Wrap"
                  AcceptsReturn="True"

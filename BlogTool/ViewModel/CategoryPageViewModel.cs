@@ -27,13 +27,17 @@ using MahApps.Metro.Controls.Dialogs;
 using MahApps.Metro.Controls;
 using Microsoft.Win32;
 using System.Windows.Controls;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using static System.Net.Mime.MediaTypeNames;
+using System.Text.RegularExpressions;
+using BlogTool.Markdown.Implements;
 
 namespace BlogTool.ViewModel
 {
     public class CategoryPageViewModel : ObservableObject
     {
         private static string _fileName = null;
-        private static string _excelFilesXlsxXls = "Markdown文件|*.md|所有文件|*.*";
+        private static string _markdownFilesMd = "Markdown文件|*.md|所有文件|*.*";
         private static readonly string basePath = CommonHelper.AppBasePath;
         private ObservableCollection<object> _categoryTypeInfos;
 
@@ -132,44 +136,6 @@ namespace BlogTool.ViewModel
         }
 
 
-        private HexoPostMetadata ReadHexoPostMetadata(string filePath)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine("File not found: " + filePath);
-                return null;
-            }
-
-            string content = File.ReadAllText(filePath);
-
-            // 查找 YAML 头部信息的开始和结束位置  
-            int start = content.IndexOf("---");
-            int end = content.LastIndexOf("---") + 3; // 加上 "---" 的长度  
-
-            if (start == -1 || end == -1 || start >= end)
-            {
-                Console.WriteLine("No YAML front matter found in the file.");
-                return null;
-            }
-
-            // 提取 YAML 头部信息  
-            string yamlContent = content.Substring(start, end - start);
-
-            // 使用 YamlDotNet 解析 YAML 内容  
-            var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(new CamelCaseNamingConvention()) // 根据需要选择命名约定  
-                .Build();
-
-            try
-            {
-                return deserializer.Deserialize<HexoPostMetadata>(yamlContent);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error deserializing YAML: " + ex.Message);
-                return null;
-            }
-        }
 
         private void CategoryPageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -270,11 +236,17 @@ namespace BlogTool.ViewModel
                 var getMarkdownOption = new GetMarkdownOption()
                 {
                     ReadMorePosition = -1,
+                    AigcOption=new Core.Options.AigcOption()
+                    {
+                        Provider="DashScope",
+                        Target= "Description,Tag",
+                        ApiKey= "sk-abfb5186d29e4a0cbd6c329517b61cce"
+                    }
                 };
                 string path = Path.Combine(basePath, "Data");
                 var openFileDialog = new OpenFileDialog();
                 openFileDialog.InitialDirectory = path;
-                openFileDialog.Filter = _excelFilesXlsxXls;
+                openFileDialog.Filter = _markdownFilesMd;
                 openFileDialog.FileName = _fileName;
                 openFileDialog.AddExtension = true;
                 openFileDialog.RestoreDirectory = true;
@@ -304,62 +276,6 @@ namespace BlogTool.ViewModel
         }
 
 
-        private async void ImportFromClipboardAction()
-        {
-            var dialog = new CustomDialog()
-            {
-                Content = new UserControl()
-                {
-                    Content = new ClipboardInputDialog() { Name = "MainDialog" }
-
-                },
-
-                Title = "从剪贴板导入"
-            };
-
-            await DialogManager.ShowMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
-
-            dialog.FindChild<ClipboardInputDialog>("MainDialog").CancelButton.Click += async (o, e) =>
-            {
-                await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
-
-            };
-            dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxContent.TextChanged += (o, e) =>
-            {
-                var title = dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxTitle.Text;
-                var content = dialog.FindChild<ClipboardInputDialog>("MainDialog").TextBoxContent.Text;
-                if (string.IsNullOrEmpty(title))
-                {
-                    title = content.Trim().Substring(0, Math.Min(content.Trim().Length, 12));
-
-                }
-                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(content))
-                {
-                    return;
-                }
-                var task = InvokeHelper.InvokeOnUi<ProcessResultDto[]>(null, () =>
-                {
-
-                    var getMarkdownOption = new GetMarkdownOption()
-                    {
-                        ReadMorePosition = -1,
-                    };
-                    return ProcessMarkdowns(getMarkdownOption, new TextMarkdownProvider(), new { Title = title, Content = content });
-
-                }, async (t) =>
-                {
-                    foreach (var item in t)
-                    {
-                        this.ProcessResultList.Add(item);
-                    }
-                    await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
-
-                });
-            };
-
-
-
-        }
 
 
         internal void RemoveCategory(IMarkdown CategoryInfo)
@@ -415,6 +331,31 @@ namespace BlogTool.ViewModel
             }
         }
 
+        private bool _isRepost;
+
+        public bool IsRepost
+        {
+            get { return _isRepost; }
+            set
+            {
+                _isRepost = value;
+                OnPropertyChanged(nameof(IsRepost));
+            }
+        }
+
+        private string _author;
+
+        public string Author
+        {
+            get { return _author; }
+            set
+            {
+                _author = value;
+                OnPropertyChanged(nameof(Author));
+            }
+        }
+
+
 
 
         public ObservableCollection<object> Entities
@@ -451,7 +392,6 @@ namespace BlogTool.ViewModel
         public bool HasValue => this.Entities.Count > 0;
 
         public List<MenuCommand> ImportOptions => new List<MenuCommand>() {
-            new MenuCommand("从剪贴板导入", ImportFromClipboardAction, () => true),
             new MenuCommand("从文件夹导入", ImportFromLocalAction, () => true),
             new MenuCommand("从MetaWeblog接口导入", ImportFromMetaWeblogAction, () => true),
         };
@@ -491,8 +431,13 @@ namespace BlogTool.ViewModel
             templateMd = templateMd.Replace("{{ date }}", md.DateCreated.HasValue ? md.DateCreated.Value.ToString("yyyy-MM-dd HH:mm:ss") : DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             string categoriesNode = "categories:\n";
-            if (md.Keywords != null)
+            if (md.Categories != null)
             {
+                if (IsRepost)
+                {
+                    md.Categories.Add("转载");
+                    templateMd = templateMd.Replace("categories:", categoriesNode);
+                }
                 foreach (var category in md.Categories)
                 {
                     categoriesNode += $"  - {category}\n";
@@ -503,7 +448,9 @@ namespace BlogTool.ViewModel
             string keywordsNode = "tags:\n";
             if (md.Keywords != null)
             {
-                foreach (var keyword in md.Keywords.Split(","))
+                var keywords = md.Keywords.Split(",");
+
+                foreach (var keyword in keywords)
                 {
                     keywordsNode += $"  - {keyword}\n";
                 }
@@ -593,6 +540,17 @@ namespace BlogTool.ViewModel
 
 
             var content = string.Concat(templateMd, fileContent);
+
+            int start = content.IndexOf("---");
+            int end = content.LastIndexOf("---") + 3;
+
+            var hexoPostMetadata = YamlHelper.ReadHexoPostMetadata(start, end, content) as IDictionary<object, object>;
+            if (IsRepost)
+            {
+                hexoPostMetadata["author"]=Author;
+            }
+
+            content = YamlHelper.WriteHexoPostMetadata(start, end, content, hexoPostMetadata);
             DirFileHelper.WriteText(fileFullPath, content);
             processResultList.Add(new ProcessResultDto(DateTime.Now, $"Markdown文件处理完成，文件保存在：{fileFullPath}"));
             return fileFullPath;
