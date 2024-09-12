@@ -5,9 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BlogTool.Core.Markdown;
 
-namespace BlogTool.Markdown.Implements
+namespace BlogTool.Core.Markdown.Implements
 {
     public class TextMarkdownProvider : MarkdownProvider
     {
@@ -26,7 +25,7 @@ namespace BlogTool.Markdown.Implements
                 switch (option.AigcOption.Provider)
                 {
                     case DashScopeClient.Name:
-                        //aigcClientClient = new DashScopeClient(option.AigcOption.ApiKey);
+                        aigcClientClient = new DashScopeClient(option.AigcOption.ApiKey);
                         break;
 
                     default:

@@ -4,8 +4,8 @@
     var config = {
         JQUERY: 'jquery-3.6.3.min.js',
         ECHARTS: 'thumbnail-bg-gen.js',
-        DEFAULT_WIDTH: '1920',
-        DEFAULT_HEIGHT: '800'
+        DEFAULT_WIDTH: '300',
+        DEFAULT_HEIGHT: '200'
     }, parseParams, render, pick, usage, params;
     usage = function () {
         console.log("\nUsage: phantomjs echarts-convert.js -options options -outfile filename -width width -height height"
@@ -53,7 +53,7 @@
             console.log(msg);
         };
 
-        createChart = function (width, height, config) {
+        createChart = function (title, width, height, config) {
             var counter = 0;
             function decrementImgCounter() {
                 counter -= 1;
@@ -80,13 +80,31 @@
 
             var newDiv = document.createElement("div");
             newDiv.id = "display";
-            newDiv.style.width = "300px";
-            newDiv.style.height = "200px";
+            newDiv.style.width = width + "px";
+            newDiv.style.height = height + "px";
             newDiv.style.background = "black";
 
-            // 将新的 div 追加到这个元素中
+            const p = document.createElement('p');
+
+            p.innerText = title;
+
+            p.style.position = 'absolute';
+            p.style.top = '50%';
+            p.style.left = '50%';
+            p.style.transform = 'translate(-50%, -50%)';
+            p.style.textAlign = 'center';
+            p.style.color = 'white';
+
+
+
+
             document.body.appendChild(newDiv);
+
+            console.log(document.body.innerHTML);
+
             this.generateGrad("#000000", 7, newDiv);
+
+            newDiv.appendChild(p);
 
         };
 
@@ -101,7 +119,7 @@
             var height = pick(params.height, config.DEFAULT_HEIGHT);
             console.log('start rendering:' + params.outfile);
 
-            var base64 = page.evaluate(createChart, params.options, width, height, config);
+            var base64 = page.evaluate(createChart, params.title, width, height, config);
             //fs.write("base64.txt", base64);
             // define the clip-rectangle
             console.log('rendering.. :' + params.outfile);

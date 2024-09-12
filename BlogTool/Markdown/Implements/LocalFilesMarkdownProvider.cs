@@ -7,9 +7,8 @@ using System.IO;
 using System.Linq;
 using static System.Net.Mime.MediaTypeNames;
 using System.Text.RegularExpressions;
-using BlogTool.Core.Markdown;
 
-namespace BlogTool.Markdown.Implements
+namespace BlogTool.Core.Markdown.Implements
 {
     public class LocalFilesMarkdownProvider : MarkdownProvider
     {

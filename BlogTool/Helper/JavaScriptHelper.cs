@@ -7,21 +7,19 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BlogTool.Common;
+using BlogTool.Core.Helper;
 using Newtonsoft.Json;
 
 namespace BlogTool.Helper
 {
     public class JavaScriptHelper
     {
-        private static readonly string basePath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName;
+        private readonly static string basePath = CommonHelper.AppBasePath;
 
-        public static Task<string> ExportThumbnailAsync(ExportOption exportOption)
+
+        private static PhantomJSOverride InitPhantomJS()
         {
-
-            var tcs = new TaskCompletionSource<string>();
-            var result = string.Empty;
             var phantomJS = new PhantomJSOverride();
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 phantomJS.ToolPath = Path.Combine(basePath, "libs\\phantomjs-2.1.1-windows\\bin");
@@ -32,6 +30,15 @@ namespace BlogTool.Helper
                 phantomJS.ToolPath = Path.Combine(basePath, "libs\\phantomjs-2.1.1-linux-x86_64\\bin");
 
             }
+            return phantomJS;
+        }
+
+        public static Task<string> ExportThumbnailAsync(ExportOption exportOption)
+        {
+
+            var tcs = new TaskCompletionSource<string>();
+            var result = string.Empty;
+            var phantomJS = InitPhantomJS();
             var scriptPath = Path.Combine(basePath, "js\\thumbnail-converts.js");
 
 
@@ -60,6 +67,10 @@ namespace BlogTool.Helper
             if (exportOption.Height > 0) args = args.Concat(new string[] { "-height", exportOption.Height.ToString() }).ToArray();
             if (exportOption.Width > 0) args = args.Concat(new string[] { "-width", exportOption.Width.ToString() }).ToArray();
 
+            if (!string.IsNullOrEmpty(exportOption.Title)) args = args.Concat(new string[] { "-title", exportOption.Title }).ToArray();
+
+            if (!string.IsNullOrEmpty(exportOption.Outfile)) args = args.Concat(new string[] { "-outfile", exportOption.Outfile }).ToArray();
+
             phantomJS.Run(scriptPath, args);
             return tcs.Task;
         }
@@ -69,18 +80,8 @@ namespace BlogTool.Helper
 
             var tcs = new TaskCompletionSource<string>();
             var result = string.Empty;
-            var phantomJS = new PhantomJSOverride();
+            var phantomJS = InitPhantomJS();
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                phantomJS.ToolPath = Path.Combine(basePath, "libs\\phantomjs-2.1.1-windows\\bin");
-
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                phantomJS.ToolPath = Path.Combine(basePath, "libs\\phantomjs-2.1.1-linux-x86_64\\bin");
-
-            }
             var scriptPath = Path.Combine(basePath, "js\\markdown.js");
 
             bool isCollectingOutput = false;

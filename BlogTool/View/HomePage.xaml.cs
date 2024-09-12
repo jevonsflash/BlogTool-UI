@@ -4,6 +4,8 @@ using System.IO;
 using System.Reflection.Metadata;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using BlogTool.Helper;
 using BlogTool.Model;
 using BlogTool.ViewModel;
@@ -104,10 +106,6 @@ namespace BlogTool.View
 
         }
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
-        {
-            await JavaScriptHelper.ExportThumbnailAsync(new Common.ExportOption() { Width=100, Height=100 });
 
-        }
     }
 }

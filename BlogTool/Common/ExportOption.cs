@@ -18,5 +18,7 @@ namespace BlogTool.Common
         /// </summary>
         public int Width { get; set; }
         public string Format { get; set; }
+        public string Outfile { get; set; }
+        public string Title { get; set; }
     }
 }

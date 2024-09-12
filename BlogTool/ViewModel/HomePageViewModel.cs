@@ -30,6 +30,7 @@ using System.Windows.Controls;
 using System.Reflection.Metadata;
 using YamlDotNet.Core.Tokens;
 using BlogTool.Markdown.Implements;
+using System.Threading.Tasks;
 
 namespace BlogTool.ViewModel
 {
@@ -44,7 +45,7 @@ namespace BlogTool.ViewModel
 
         public HomePageViewModel()
         {
-
+            PreviewThumbnail="/Assets/placeholder.png";
             this.RefreshCommand = new RelayCommand(() =>
             {
                 InitData();
@@ -52,11 +53,38 @@ namespace BlogTool.ViewModel
             });
             this.ImportFromClipboardCommand= new RelayCommand(ImportFromClipboardAction, () => true);
             this.ImportFromLocalCommand= new RelayCommand(ImportFromLocalAction, () => true);
-
             this.RemoveCommand = new RelayCommand<IMarkdown>(RemoveAction);
+            this.PropertyChanged+=HomePageViewModel_PropertyChanged;
+            DialogManager.DialogOpened+=DialogManager_DialogOpened;
+            DialogManager.DialogClosed+=DialogManager_DialogClosed;
             InitData();
         }
 
+        private void DialogManager_DialogClosed(object sender, DialogStateChangedEventArgs e)
+        {
+            IsOpeningDialog=false;
+        }
+
+        private void DialogManager_DialogOpened(object sender, DialogStateChangedEventArgs e)
+        {
+            IsOpeningDialog=true;
+        }
+
+        private async void HomePageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName==nameof(MarkdownContent))
+            {
+                PreviewKeywords=MarkdownContent.Keywords.Split(',').ToList();
+                PreviewThumbnailTitle=MarkdownContent.Keywords.Split(',').FirstOrDefault()??"TITLE";
+                PreviewInnerHtml= await JavaScriptHelper.GetHtmlFromMarkdownAsync(new Common.GetHtmlFromMarkdownOption() { Markdown=this.MarkdownContent.Content });
+
+            }
+
+            else if (e.PropertyName==nameof(PreviewThumbnailTitle))
+            {
+                PreviewThumbnail= await GenerateThumbnail(PreviewThumbnailTitle);
+            }
+        }
 
         public void InitData()
         {
@@ -169,7 +197,6 @@ namespace BlogTool.ViewModel
                     if (t!=null)
                     {
                         this.MarkdownContent=t;
-                        this.PreviewInnerHtml= await JavaScriptHelper.GetHtmlFromMarkdownAsync(new Common.GetHtmlFromMarkdownOption() { Markdown=this.MarkdownContent.Content });
                     }
                     await DialogManager.HideMetroDialogAsync((MetroWindow)App.Current.MainWindow, dialog);
 
@@ -221,6 +248,18 @@ namespace BlogTool.ViewModel
             }
         }
 
+        private List<string> _previewKeywords;
+
+        public List<string> PreviewKeywords
+        {
+            get { return _previewKeywords; }
+            set
+            {
+                _previewKeywords = value;
+                OnPropertyChanged(nameof(PreviewKeywords));
+            }
+        }
+
         private bool _isRepost;
         public bool IsRepost
         {
@@ -229,6 +268,17 @@ namespace BlogTool.ViewModel
             {
                 _isRepost = value;
                 OnPropertyChanged(nameof(IsRepost));
+            }
+        }
+
+        private bool _isOpeningDialog;
+        public bool IsOpeningDialog
+        {
+            get { return _isOpeningDialog; }
+            set
+            {
+                _isOpeningDialog = value;
+                OnPropertyChanged(nameof(IsOpeningDialog));
             }
         }
 
@@ -244,6 +294,32 @@ namespace BlogTool.ViewModel
             }
         }
 
+
+        private string _previewThumbnailTitle;
+
+        public string PreviewThumbnailTitle
+        {
+            get { return _previewThumbnailTitle; }
+            set
+            {
+                _previewThumbnailTitle = value;
+                OnPropertyChanged(nameof(PreviewThumbnailTitle));
+            }
+        }
+
+        private string _previewThumbnail;
+
+        public string PreviewThumbnail
+        {
+            get { return _previewThumbnail; }
+            set
+            {
+                _previewThumbnail = value;
+                OnPropertyChanged(nameof(PreviewThumbnail));
+            }
+        }
+
+
         private string _previewInnerHtml;
 
         public string PreviewInnerHtml
@@ -255,6 +331,7 @@ namespace BlogTool.ViewModel
                 OnPropertyChanged(nameof(PreviewInnerHtml));
             }
         }
+
         public RelayCommand GetDataCommand { get; set; }
 
         public RelayCommand RefreshCommand { get; set; }
@@ -494,6 +571,16 @@ namespace BlogTool.ViewModel
 
             }
 
+        }
+
+        private async Task<string> GenerateThumbnail(string title)
+        {
+            string basePath = CommonHelper.AppBasePath;
+
+            var outfilePath = Path.Combine(basePath, "temp");
+
+            var path = await JavaScriptHelper.ExportThumbnailAsync(new Common.ExportOption() { Width=100, Height=100, Outfile=outfilePath, Title="title" });
+            return path;
         }
     }
 }

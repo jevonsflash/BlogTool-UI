@@ -30,7 +30,11 @@
                 <CheckBox IsChecked="{Binding IsRepost, Mode=TwoWay}">
                     <TextBlock  Text="转载"></TextBlock>
                 </CheckBox>
-                <TextBox Height="10" Width="200" Text="{Binding Author, Mode=TwoWay}"></TextBox>
+                <TextBox Height="10"
+                         Width="200"
+                         Text="{Binding Author, Mode=TwoWay}"
+                         mah:TextBoxHelper.ClearTextButton="True"
+                         mah:TextBoxHelper.Watermark="转载出处"></TextBox>
                 <mah:DropDownButton Margin="5"
                                     Width="120"
                                     Content="导入.."
